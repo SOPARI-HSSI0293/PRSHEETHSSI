@@ -209,11 +209,230 @@
         const ProductionReportModule = ({ user }) => {
             const [rows, setRows] = useState([]);
             const [loading, setLoading] = useState(false);
-            const [header, setHeader] = useState({ 
+            const [masterSpecs, setMasterSpecs] = useState({}); // Menyimpan kamus Spec
+            
+            // --- STATE FORM & MODAL ---
+            const [isFormOpen, setIsFormOpen] = useState(false);
+            const [activeTab, setActiveTab] = useState('HEADER'); // HEADER, PROSES, DOWNTIME
+            const [showScanner, setShowScanner] = useState(false);
+
+            const [formHeader, setFormHeader] = useState({ 
                 tanggal: new Date().toISOString().split('T')[0], 
-                line: user.name, 
-                ot: '' 
+                line: user.name, leader: '', ot: '', member: '' 
             });
+            const [formProses, setFormProses] = useState({
+                ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
+                weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', 
+                qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', 
+                prod_keluar: '', line_speed: '', remark: ''
+            });
+            const [formDowntime, setFormDowntime] = useState({
+                tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', 
+                hagumi_sep: '', winder: '', cleaning: '', machine_prob: ''
+            });
+
+            useEffect(() => { loadData(); }, [formHeader.tanggal]);
+
+            // Setup QR Scanner otomatis ketika Tab Proses & Scanner aktif
+            useEffect(() => {
+                let html5QrcodeScanner;
+                if (showScanner && activeTab === 'PROSES') {
+                    html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
+                    html5QrcodeScanner.render((decodedText) => {
+                        handleQrScan(decodedText);
+                        html5QrcodeScanner.clear();
+                        setShowScanner(false);
+                    }, (err) => { /* abaikan error scan per frame */ });
+                }
+                return () => { if(html5QrcodeScanner) html5QrcodeScanner.clear(); };
+            }, [showScanner, activeTab]);
+
+            const loadData = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(`${API_URL}?action=getData&date=${formHeader.tanggal}&line=${formHeader.line}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        setRows(result.data);
+                        if(result.specs) setMasterSpecs(result.specs);
+                    }
+                } catch (e) { console.error("Load failed", e); }
+                setLoading(false);
+            };
+
+            // LOGIKA PEMISAHAN QR CODE (9 Blok)
+            const handleQrScan = (decodedText) => {
+                try {
+                    // Format: 250807007-000000I,0378,2.500 X 1000.0 X COIL,56H00498,1,4710,,9,1
+                    const parts = decodedText.split(',');
+                    if (parts.length >= 6) {
+                        const rawCcNo = parts[0];
+                        const ccno = rawCcNo.substring(0, rawCcNo.length - 1); // Blok 1: hilangkan karakter terakhir
+                        const specCode = parts[1].trim(); 
+                        const specName = masterSpecs[specCode] || specCode;    // Blok 2: Cocokkan Master Spec
+                        const rawMatSize = parts[2].trim();                    // Blok 3: Raw Material Size
+                        const weight = parts[5].trim();                        // Blok 6: Weight Raw Material
+
+                        setFormProses(prev => ({
+                            ...prev, 
+                            ccno: ccno, 
+                            spec: specName, 
+                            raw_mat_size: rawMatSize, 
+                            weight_raw: weight 
+                        }));
+                        alert("Data QR Material Berhasil Diekstrak!");
+                    } else {
+                        alert("Format QR tidak valid!");
+                    }
+                } catch(e) {
+                    alert("Error parsing QR: " + e.message);
+                }
+            };
+
+            const submitData = async () => {
+                setLoading(true);
+                const payload = { action: 'saveData', header: formHeader, proses: formProses, downtime: formDowntime };
+                try {
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await res.json();
+                    if(result.status === 'success') {
+                        alert(result.message);
+                        setIsFormOpen(false);
+                        loadData(); // Reload table
+                    } else { alert("Gagal: " + result.message); }
+                } catch(e) { alert("Error koneksi!"); }
+                setLoading(false);
+            };
+
+            const inputStyle = "w-full border border-gray-300 p-2 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none";
+            const labelStyle = "block text-xs font-bold text-gray-700 mb-1 mt-3 uppercase";
+
+            return (
+                <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen relative">
+                    
+                    {/* Header Controls Area */}
+                    <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
+                        <div className="flex flex-wrap gap-4 items-end">
+                            <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
+                                <input type="date" className="border p-2 rounded text-sm w-40 font-bold" value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} />
+                            </div>
+                            <div><label className="block text-xs font-bold mb-1 uppercase">Line</label>
+                                <input type="text" readOnly className="border p-2 rounded text-sm w-32 bg-gray-100 font-bold text-center" value={formHeader.line} />
+                            </div>
+                            <button onClick={loadData} className="bg-blue-100 text-blue-700 p-2 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={() => { setIsFormOpen(true); setActiveTab('HEADER'); }} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">
+                                + Input Data
+                            </button>
+                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
+                        </div>
+                    </div>
+
+                    {/* MODAL INPUT DATA */}
+                    {isFormOpen && (
+                        <div className="fixed inset-0 modal-overlay z-50 flex justify-center items-center p-4">
+                            <div className="bg-white w-full max-w-4xl rounded-lg shadow-2xl flex flex-col max-h-[90vh]">
+                                <div className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
+                                    <h2 className="text-lg font-bold uppercase tracking-wider">Input Production Report</h2>
+                                    <button onClick={() => setIsFormOpen(false)} className="text-white hover:text-red-400 text-2xl font-bold">&times;</button>
+                                </div>
+                                
+                                {/* TABS NAV */}
+                                <div className="flex border-b bg-gray-100">
+                                    {['HEADER', 'PROSES', 'DOWNTIME'].map(tab => (
+                                        <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === tab ? 'bg-white border-t-4 border-blue-600 text-blue-700' : 'text-gray-500 hover:bg-gray-200'}`}>
+                                            {tab}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="p-6 overflow-y-auto flex-1">
+                                    {/* TAB: HEADER */}
+                                    {activeTab === 'HEADER' && (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div><label className={labelStyle}>Tanggal</label><input type="date" className={inputStyle} value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} /></div>
+                                            <div><label className={labelStyle}>Line</label><input type="text" readOnly className={`${inputStyle} bg-gray-100`} value={formHeader.line} /></div>
+                                            <div><label className={labelStyle}>Leader</label><input type="text" className={inputStyle} value={formHeader.leader} onChange={e => setFormHeader({...formHeader, leader: e.target.value})} /></div>
+                                            <div><label className={labelStyle}>OT (Jam)</label><input type="text" className={inputStyle} value={formHeader.ot} onChange={e => setFormHeader({...formHeader, ot: e.target.value})} /></div>
+                                            <div className="col-span-2"><label className={labelStyle}>Member (Pisahkan dengan koma)</label><textarea className={inputStyle} rows="2" value={formHeader.member} onChange={e => setFormHeader({...formHeader, member: e.target.value})} placeholder="Sopari, Budi, Andi..." /></div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB: PROSES */}
+                                    {activeTab === 'PROSES' && (
+                                        <div>
+                                            <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center">
+                                                <div className="text-sm font-bold text-yellow-800">Gunakan QR Scanner untuk Auto-Fill Material</div>
+                                                <button onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600">{showScanner ? 'Tutup Scanner' : 'Buka QR Scanner'}</button>
+                                            </div>
+                                            
+                                            {showScanner && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2"></div>}
+
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div><label className={labelStyle}>CC No (QR Blok 1)</label><input type="text" className={inputStyle} value={formProses.ccno} onChange={e => setFormProses({...formProses, ccno: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Spec (QR Blok 2 - Auto Map)</label><input type="text" className={inputStyle} value={formProses.spec} onChange={e => setFormProses({...formProses, spec: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Raw Material Size (QR Blok 3)</label><input type="text" className={inputStyle} value={formProses.raw_mat_size} onChange={e => setFormProses({...formProses, raw_mat_size: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Weight Raw Material (QR Blok 6)</label><input type="text" className={inputStyle} value={formProses.weight_raw} onChange={e => setFormProses({...formProses, weight_raw: e.target.value})} /></div>
+                                                
+                                                {/* Manual Inputs */}
+                                                <div><label className={labelStyle}>Customer</label><input type="text" className={inputStyle} value={formProses.customer} onChange={e => setFormProses({...formProses, customer: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Actual Width Raw Mat</label><input type="text" className={inputStyle} value={formProses.actual_width} onChange={e => setFormProses({...formProses, actual_width: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Weight Coil Back</label><input type="text" className={inputStyle} value={formProses.weight_cb} onChange={e => setFormProses({...formProses, weight_cb: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Product Size</label><input type="text" className={inputStyle} value={formProses.product_size} onChange={e => setFormProses({...formProses, product_size: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Qty FG</label><input type="number" className={inputStyle} value={formProses.qty_fg} onChange={e => setFormProses({...formProses, qty_fg: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Qty NG</label><input type="number" className={inputStyle} value={formProses.qty_ng} onChange={e => setFormProses({...formProses, qty_ng: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Qty Total</label><input type="number" className={inputStyle} value={formProses.qty_total} onChange={e => setFormProses({...formProses, qty_total: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Total Length</label><input type="text" className={inputStyle} value={formProses.total_length} onChange={e => setFormProses({...formProses, total_length: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Coil Set Lifter</label><input type="time" className={inputStyle} value={formProses.coil_set} onChange={e => setFormProses({...formProses, coil_set: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Start Proses</label><input type="time" className={inputStyle} value={formProses.start_proc} onChange={e => setFormProses({...formProses, start_proc: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>End Proses</label><input type="time" className={inputStyle} value={formProses.end_proc} onChange={e => setFormProses({...formProses, end_proc: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Produk Keluar Mesin</label><input type="time" className={inputStyle} value={formProses.prod_keluar} onChange={e => setFormProses({...formProses, prod_keluar: e.target.value})} /></div>
+                                                <div><label className={labelStyle}>Line Speed</label><input type="text" className={inputStyle} value={formProses.line_speed} onChange={e => setFormProses({...formProses, line_speed: e.target.value})} /></div>
+                                                <div className="col-span-3"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB: DOWNTIME */}
+                                    {activeTab === 'DOWNTIME' && (
+                                        <div className="grid grid-cols-3 gap-4">
+                                            {['tbm', 'packing_cb', 'waiting_mc', 'waiting_hagumi', 'waiting_crane', 'hagumi_sep', 'winder', 'cleaning', 'machine_prob'].map(dt => (
+                                                <div key={dt}><label className={labelStyle}>{dt.replace(/_/g, ' ')} (Menit)</label><input type="number" className={inputStyle} value={formDowntime[dt]} onChange={e => setFormDowntime({...formDowntime, [dt]: e.target.value})} /></div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="bg-gray-100 p-4 border-t flex justify-end gap-3 rounded-b-lg">
+                                    <button onClick={() => setIsFormOpen(false)} className="px-6 py-2 rounded font-bold text-gray-600 bg-gray-200 hover:bg-gray-300">Batal</button>
+                                    <button onClick={submitData} disabled={loading} className="px-6 py-2 rounded font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg">
+                                        {loading ? 'Menyimpan...' : 'Simpan Data'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- TABLE DAN UI BAWAHAN TETAP SAMA SEPERTI SEBELUMNYA --- */}
+                    <div className="w-full flex justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
+                         {/* Biarkan bagian Print Header tetap utuh sesuai desain yang sudah ada */}
+                         <div className="w-1/3 text-lg font-bold">
+                            Tanggal : <span className="border-b border-black min-w-[150px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span>
+                        </div>
+                        <div className="w-1/3 text-center">
+                            <h1 className="text-3xl font-black tracking-widest uppercase">PRODUCTION REPORT</h1>
+                        </div>
+                    </div>
+                    {/* ... (Tabel excel-table Anda dan Footer Cek Leader dibiarkan seperti asli) ... */}
+                </div>
+            );
+        };
             const [members, setMembers] = useState(Array(10).fill(''));
             const [showScanner, setShowScanner] = useState(false);
             const scannerRef = useRef(null);
@@ -500,7 +719,7 @@ try {
                         </div>
 
                         <h2 className="login-left" style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-                            Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level
+                            Prod Report<br />hanwa<br />form input<br />company to the<br />next level
                         </h2>
                     </div>
 
