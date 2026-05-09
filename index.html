@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Production Report - PT. HSSI</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -18,8 +20,106 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        <?!= include('Layout'); ?>
-        // File Page_Menu1, dll akan di-include di dalam Layout nanti
+        const App = () => {
+            // State untuk mengatur menu yang aktif
+            const [activeMenu, setActiveMenu] = React.useState('menu1');
+            // State untuk Sidebar (Minimize/Maximize)
+            const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+            const menus = [
+                { id: 'menu1', title: 'Production Report', icon: '📝' },
+                { id: 'menu2', title: 'Dashboard Monitor', icon: '📊' },
+                { id: 'menu3', title: 'Upload Planning', icon: '📤' },
+                { id: 'menu4', title: 'OEE Analysis', icon: '⚙️' },
+                { id: 'menu5', title: 'Print NG Report', icon: '🖨️' },
+            ];
+
+            // Fungsi Render Konten Berdasarkan Menu Aktif
+            const renderContent = () => {
+                switch(activeMenu) {
+                    case 'menu1':
+                        return (
+                            <div className="p-6 bg-white rounded-lg shadow border-t-4 border-blue-600">
+                                <h2 className="text-xl font-bold mb-4">Production Report Module</h2>
+                                <p className="text-gray-600">Ruang ini akan kita isi dengan kode Scanner QR dari sistem sebelumnya.</p>
+                            </div>
+                        );
+                    case 'menu2':
+                        return (
+                            <div className="p-6 bg-slate-900 text-white rounded-lg shadow">
+                                <h2 className="text-xl font-bold mb-4 text-green-400">Dashboard Monitor (Dark Mode)</h2>
+                                <p className="text-slate-300">Grafik pencapaian target dan status line akan dimuat di sini.</p>
+                            </div>
+                        );
+                    default:
+                        return (
+                            <div className="p-6 bg-white rounded-lg shadow">
+                                <h2 className="text-xl font-bold text-gray-400">Modul sedang dalam pengembangan...</h2>
+                            </div>
+                        );
+                }
+            };
+
+            return (
+                <div className="flex h-screen bg-gray-100 overflow-hidden">
+                    {/* SIDEBAR */}
+                    <div className={`bg-blue-900 text-white transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                        {/* Header Sidebar */}
+                        <div className="h-16 flex items-center justify-between px-4 border-b border-blue-800 bg-blue-950">
+                            {isSidebarOpen && <span className="font-black text-lg tracking-wider">HSSI SYSTEM</span>}
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-blue-800 rounded transition-colors">
+                                {isSidebarOpen ? '◀' : '▶'}
+                            </button>
+                        </div>
+
+                        {/* Navigasi Menu */}
+                        <div className="flex-1 overflow-y-auto py-6">
+                            <ul className="space-y-3 px-3">
+                                {menus.map((menu) => (
+                                    <li key={menu.id}>
+                                        <button 
+                                            onClick={() => setActiveMenu(menu.id)}
+                                            className={`w-full flex items-center p-3 rounded-xl transition-all duration-200 ${activeMenu === menu.id ? 'bg-blue-600 shadow-md transform scale-105' : 'hover:bg-blue-800'}`}
+                                            title={!isSidebarOpen ? menu.title : ""}
+                                        >
+                                            <span className="text-2xl drop-shadow-md">{menu.icon}</span>
+                                            {isSidebarOpen && <span className="ml-4 text-sm font-bold tracking-wide whitespace-nowrap">{menu.title}</span>}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* MAIN CONTENT AREA */}
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                        {/* Topbar / Header */}
+                        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-8 z-10 border-b border-gray-200">
+                            <h1 className="text-2xl font-black text-gray-800 uppercase tracking-widest">
+                                {menus.find(m => m.id === activeMenu)?.title}
+                            </h1>
+                            <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-full border border-gray-200 shadow-inner">
+                                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                                    S
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-black text-gray-800 leading-none">Sopari</span>
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase">Administrator</span>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Dynamic Page Content */}
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-8">
+                            {renderContent()}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
