@@ -399,11 +399,9 @@
                 setLoading(true);
                 setError('');
                 try {
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'login', username: username.trim(), password: password.trim() })
-                    });
+                    // Gunakan GET request agar tidak terkena CORS block pada GAS
+                    const url = `${API_URL}?action=login&username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password.trim())}`;
+                    const response = await fetch(url);
                     const result = await response.json();
                     if (result.status === 'success') {
                         onLogin(result.user);
@@ -411,7 +409,7 @@
                         setError(result.message || 'Username atau Password Salah!');
                     }
                 } catch (e) {
-                    setError('Koneksi gagal. Coba lagi.');
+                    setError('Koneksi gagal. Pastikan GAS sudah di-deploy ulang dengan fungsi doGet.');
                 } finally {
                     setLoading(false);
                 }
