@@ -16,7 +16,7 @@
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
-        .member-input { width: 100%; border: 1px solid #ccc; padding: 4px 8px; font-size: 11px; border-radius: 4px; text-transform: uppercase; }
+        .member-input { width: 100%; border: 1px solid #d1d5db; padding: 4px; font-size: 10px; border-radius: 4px; text-transform: uppercase; text-align: center; font-weight: bold;}
         .member-input:focus { outline: 2px solid #3b82f6; border-color: transparent; }
     </style>
 </head>
@@ -29,8 +29,11 @@
         // --- KUMPULAN IKON SVG ---
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
         const IconReport = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
+        const IconUpload = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
+        const IconAnalyze = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M11 10.27 7 3.34"/><path d="m20.66 17-1.73-1"/><path d="m3.34 7 1.73 1"/><path d="M14 12h8"/><path d="M2 12h2"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m17 3.34-1 1.73"/><path d="m11 13.73-4 6.93"/></svg>;
+        const IconPrint = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
         const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>;
-        const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
+        const PlusIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>;
         const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         const IconChevronLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
 
@@ -51,7 +54,6 @@
             const [currentEntry, setCurrentEntry] = useState(null);
             const scannerRef = useRef(null);
 
-            // STATE HEADER DENGAN LEADER
             const [header, setHeader] = useState({
                 tanggal: new Date().toISOString().split('T')[0],
                 line: lineOptions[0],
@@ -59,7 +61,6 @@
                 ot: ''
             });
 
-            // STATE MEMBER ARRAY (10 Slot)
             const [members, setMembers] = useState(Array(10).fill(''));
 
             useEffect(() => {
@@ -97,7 +98,6 @@
                 const newNo = rows.length > 0 ? Math.max(...rows.map(r => parseInt(r.no) || 0)) + 1 : 1;
                 const finalEntry = { ...currentEntry, no: newNo };
                 
-                // Filter member yang kosong agar tidak ikut terkirim menjadi string kosong berlebih
                 const validMembers = members.filter(m => m.trim() !== "");
                 const payload = { header: header, members: validMembers, rows: [finalEntry] };
 
@@ -123,11 +123,11 @@
             };
 
             return (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col relative h-[calc(100vh-120px)]">
+                <div className="bg-white rounded-lg shadow border border-gray-200 flex flex-col relative h-full">
                     
                     {/* MODAL SCANNER */}
                     {showScanner && (
-                        <div className="absolute inset-0 z-[100] modal-overlay flex items-center justify-center p-4 rounded-lg">
+                        <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
                                 <div className="p-4 border-b flex justify-between items-center bg-gray-50">
                                     <h2 className="text-lg font-bold text-black">Scan QR Label</h2>
@@ -140,35 +140,31 @@
 
                     {/* MODAL FORM INPUT */}
                     {showFormModal && currentEntry && (
-                        <div className="absolute inset-0 z-[100] modal-overlay flex items-center justify-center p-4 overflow-y-auto rounded-lg">
+                        <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4 overflow-y-auto">
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl border border-blue-200 mt-10 mb-10 text-xs">
                                 <div className="p-3 border-b flex justify-between items-center bg-blue-600 text-white sticky top-0 z-10">
                                     <h2 className="font-bold uppercase">Lengkapi Data Produksi</h2>
                                     <button onClick={() => setShowFormModal(false)}><XIcon /></button>
                                 </div>
                                 <div className="p-4 grid grid-cols-4 gap-3 text-black">
-                                    {/* Data QR */}
                                     <div className="col-span-4 text-blue-700 font-bold uppercase border-b border-blue-200 pb-1">Data QR (Otomatis)</div>
                                     <div><label className="font-bold block">CCNO</label><input className="w-full border p-1.5 rounded bg-gray-50 font-bold text-blue-900" readOnly value={currentEntry.ccno} /></div>
                                     <div><label className="font-bold block">Spec</label><input className="w-full border p-1.5 rounded bg-gray-50 font-bold" readOnly value={currentEntry.spec} /></div>
                                     <div><label className="font-bold block">MC/Semi</label><input className="w-full border p-1.5 rounded bg-gray-50 font-bold" readOnly value={currentEntry.mc_semi} /></div>
                                     <div><label className="font-bold block">Weight</label><input className="w-full border p-1.5 rounded bg-gray-50 font-bold" readOnly value={currentEntry.weight} /></div>
                                     
-                                    {/* Input Proses */}
                                     <div className="col-span-4 text-gray-600 font-bold uppercase border-b border-gray-200 pb-1 mt-2">Input Produksi</div>
                                     <div><label className="font-bold block">Qty FG</label><input type="number" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.qty_fg} onChange={e => setCurrentEntry({...currentEntry, qty_fg: e.target.value})} /></div>
                                     <div><label className="font-bold block">Qty NG</label><input type="number" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.qty_ng} onChange={e => setCurrentEntry({...currentEntry, qty_ng: e.target.value})} /></div>
                                     <div><label className="font-bold block">Start Proc</label><input type="time" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.start_proc} onChange={e => setCurrentEntry({...currentEntry, start_proc: e.target.value})} /></div>
                                     <div><label className="font-bold block">End Proc</label><input type="time" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.end_proc} onChange={e => setCurrentEntry({...currentEntry, end_proc: e.target.value})} /></div>
                                     
-                                    {/* Downtime */}
                                     <div className="col-span-4 text-gray-600 font-bold uppercase border-b border-gray-200 pb-1 mt-2">Downtime (Menit)</div>
                                     <div><label className="font-bold block">TBM</label><input type="number" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.tbm} onChange={e => setCurrentEntry({...currentEntry, tbm: e.target.value})} /></div>
                                     <div><label className="font-bold block">Machine Prob</label><input type="number" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.machine_prob} onChange={e => setCurrentEntry({...currentEntry, machine_prob: e.target.value})} /></div>
                                     <div><label className="font-bold block">Cleaning</label><input type="number" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.cleaning} onChange={e => setCurrentEntry({...currentEntry, cleaning: e.target.value})} /></div>
                                     <div><label className="font-bold block">Remark</label><input type="text" className="w-full border p-1.5 rounded border-gray-300" value={currentEntry.remark} onChange={e => setCurrentEntry({...currentEntry, remark: e.target.value})} /></div>
 
-                                    {/* Tombol Simpan */}
                                     <div className="col-span-4 border-t pt-3 mt-2 flex justify-end gap-2">
                                         <button onClick={() => setShowFormModal(false)} className="px-4 py-2 border rounded font-bold text-gray-600 bg-gray-100 hover:bg-gray-200">BATAL</button>
                                         <button onClick={handleSaveSingleRowToDB} disabled={isLoading} className="px-6 py-2 bg-green-600 text-white rounded font-bold shadow hover:bg-green-700 flex items-center gap-2">
@@ -187,52 +183,72 @@
                         </div>
                     )}
 
-                    {/* --- AREA HEADER TOOLBAR --- */}
-                    <div className="flex justify-between items-center bg-white p-3 border-b border-gray-200 text-black">
-                        <div className="flex flex-wrap gap-3">
-                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-gray-50">
+                    {/* --- HEADER BIRU --- */}
+                    <div className="bg-[#1e3a8a] text-white p-4 rounded-t-lg border-b-4 border-blue-400">
+                        <h2 className="text-xl font-black italic tracking-wider">HSSI - PRODUCTION REPORT <span className="text-xs font-normal not-italic opacity-75">v2.1</span></h2>
+                        <p className="text-xs text-blue-200 uppercase font-bold mt-1">Sistem Pencatatan Data Produksi</p>
+                    </div>
+
+                    {/* --- AREA CONTROL PANEL --- */}
+                    <div className="bg-gray-100 p-3 border-b flex flex-col xl:flex-row gap-4 xl:justify-between items-start xl:items-center">
+                        {/* Kiri: Info Line */}
+                        <div className="flex flex-wrap gap-2">
+                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-white shadow-sm">
                                 <span className="font-bold text-[10px] text-gray-500">TGL</span>
                                 <input type="date" className="border-none bg-transparent text-xs font-bold focus:ring-0 p-0" value={header.tanggal} onChange={(e) => setHeader({...header, tanggal: e.target.value})} />
                             </div>
-                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-gray-50">
+                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-white shadow-sm">
                                 <span className="font-bold text-[10px] text-gray-500">LINE</span>
                                 <select className="border-none bg-transparent text-xs font-bold focus:ring-0 p-0 cursor-pointer" value={header.line} onChange={(e) => setHeader({...header, line: e.target.value})}>
                                     {lineOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                 </select>
                             </div>
-                            {/* INPUT LEADER */}
-                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-gray-50">
+                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-white shadow-sm">
                                 <span className="font-bold text-[10px] text-gray-500">LEADER</span>
-                                <input type="text" className="w-24 border-none bg-transparent text-xs font-bold focus:ring-0 p-0 uppercase" placeholder="NAMA..." value={header.leader} onChange={(e) => setHeader({...header, leader: e.target.value})} />
+                                <input type="text" className="w-20 border-none bg-transparent text-xs font-bold focus:ring-0 p-0 uppercase" placeholder="..." value={header.leader} onChange={(e) => setHeader({...header, leader: e.target.value})} />
                             </div>
-                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-gray-50">
+                            <div className="flex items-center gap-2 border border-gray-300 px-2 py-1 rounded bg-white shadow-sm">
                                 <span className="font-bold text-[10px] text-gray-500">OT</span>
-                                <input type="text" className="w-12 border-none bg-transparent text-xs font-bold focus:ring-0 p-0 uppercase" placeholder="..." value={header.ot} onChange={(e) => setHeader({...header, ot: e.target.value})} />
+                                <input type="text" className="w-10 border-none bg-transparent text-xs font-bold focus:ring-0 p-0 uppercase" placeholder="..." value={header.ot} onChange={(e) => setHeader({...header, ot: e.target.value})} />
                             </div>
                         </div>
-                        <button onClick={() => setShowScanner(true)} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 font-bold flex items-center gap-2 text-xs">
-                            <PlusIcon /> SCAN QR
-                        </button>
+
+                        {/* Kanan: Input Members Horizontal */}
+                        <div className="bg-white p-2 border border-gray-300 rounded shadow-sm">
+                            <div className="text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Input Line Members</div>
+                            <div className="grid grid-cols-5 md:grid-cols-10 gap-1">
+                                {members.map((member, index) => (
+                                    <input 
+                                        key={index}
+                                        type="text" 
+                                        className="member-input w-14" 
+                                        placeholder={`M${index + 1}`} 
+                                        value={member} 
+                                        onChange={(e) => handleMemberChange(index, e.target.value)} 
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     {/* --- AREA TABEL --- */}
-                    <div className="flex-1 overflow-auto bg-white p-2">
-                        <table className="w-full border-collapse table-fixed min-w-[1000px] text-[10px] text-black">
-                            <thead className="sticky top-0 bg-[#2c323a] text-white z-10 text-center uppercase font-bold">
+                    <div className="flex-1 overflow-auto bg-white">
+                        <table className="w-full border-collapse table-fixed min-w-[900px] text-[10px] text-black">
+                            <thead className="sticky top-0 bg-[#2c323a] text-white z-10 text-center uppercase font-bold text-[11px]">
                                 <tr>
-                                    <th className="border border-gray-500 p-1.5 w-10">NO</th>
-                                    <th className="border border-gray-500 p-1.5 w-32">CCNO</th>
-                                    <th className="border border-gray-500 p-1.5 w-24">SPEC</th>
-                                    <th className="border border-gray-500 p-1.5 w-20">WEIGHT</th>
-                                    <th className="border border-gray-500 p-1.5 w-16">QTY FG</th>
-                                    <th className="border border-gray-500 p-1.5 w-16">START</th>
-                                    <th className="border border-gray-500 p-1.5 w-16">END</th>
-                                    <th className="border border-gray-500 p-1.5 w-32">REMARK</th>
+                                    <th className="border border-gray-500 p-2 w-10">NO</th>
+                                    <th className="border border-gray-500 p-2 w-32">CCNO</th>
+                                    <th className="border border-gray-500 p-2 w-24">SPEC</th>
+                                    <th className="border border-gray-500 p-2 w-20">WEIGHT</th>
+                                    <th className="border border-gray-500 p-2 w-16">QTY FG</th>
+                                    <th className="border border-gray-500 p-2 w-16">START</th>
+                                    <th className="border border-gray-500 p-2 w-16">END</th>
+                                    <th className="border border-gray-500 p-2 w-32">REMARK</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rows.length === 0 && (
-                                    <tr><td colSpan="8" className="h-24 text-center text-gray-400 italic font-medium">Belum ada data scan di sesi ini.</td></tr>
+                                    <tr><td colSpan="8" className="h-24 text-center text-gray-400 italic font-medium bg-gray-50">Belum ada data scan di sesi ini.</td></tr>
                                 )}
                                 {rows.map((row, idx) => (
                                     <tr key={idx} className="hover:bg-blue-50 text-center h-8 border-b">
@@ -250,23 +266,23 @@
                         </table>
                     </div>
 
-                    {/* --- AREA FOOTER: INPUT LINE MEMBERS --- */}
-                    <div className="bg-gray-100 p-3 border-t border-gray-300 shrink-0">
-                        <div className="text-[10px] font-bold text-gray-600 mb-2 uppercase">Input Line Members</div>
-                        <div className="grid grid-cols-5 gap-2">
-                            {members.map((member, index) => (
-                                <div key={index} className="flex items-center gap-1">
-                                    <span className="text-[10px] text-gray-500 font-bold w-5">M{index + 1}</span>
-                                    <input 
-                                        type="text" 
-                                        className="member-input" 
-                                        placeholder="Nama..." 
-                                        value={member} 
-                                        onChange={(e) => handleMemberChange(index, e.target.value)} 
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    {/* --- AREA BANTUAN --- */}
+                    <div className="bg-yellow-50 border border-yellow-200 p-3 text-xs text-yellow-800 m-2 rounded shadow-sm">
+                        <strong className="font-bold flex items-center gap-1 mb-1">💡 Cara Penggunaan:</strong>
+                        <ol className="list-decimal ml-5 leading-tight space-y-0.5">
+                            <li>Isi parameter Tanggal, Line, Leader, dan Anggota.</li>
+                            <li>Klik tombol Scan QR biru yang mengambang di pojok kanan bawah.</li>
+                            <li>Lengkapi data produksi pada jendela pop-up.</li>
+                            <li>Klik Simpan, data akan tersimpan ke database Google Sheets secara otomatis.</li>
+                        </ol>
+                    </div>
+
+                    {/* --- FLOATING ACTION BUTTON --- */}
+                    <div className="absolute bottom-6 right-6 flex flex-col gap-3">
+                        <button onClick={() => setShowScanner(true)} className="bg-blue-600 text-white p-4 rounded-full shadow-2xl hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all group flex items-center justify-center gap-2 z-50">
+                            <PlusIcon />
+                            <span className="hidden group-hover:inline pr-2 font-bold text-sm tracking-wide">SCAN QR</span>
+                        </button>
                     </div>
                 </div>
             );
@@ -279,9 +295,13 @@
             const [activeMenu, setActiveMenu] = React.useState('menu1');
             const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
 
+            // Perbaikan 1: Mengembalikan semua 5 Menu
             const menus = [
-                { id: 'menu2', title: 'Dashboard', icon: <IconDashboard /> },
                 { id: 'menu1', title: 'Production Report', icon: <IconReport /> },
+                { id: 'menu2', title: 'Dashboard Monitor', icon: <IconDashboard /> },
+                { id: 'menu3', title: 'Upload Planning', icon: <IconUpload /> },
+                { id: 'menu4', title: 'OEE Analysis', icon: <IconAnalyze /> },
+                { id: 'menu5', title: 'Print NG Report', icon: <IconPrint /> },
             ];
 
             return (
@@ -321,6 +341,7 @@
                                                 ${activeMenu === menu.id ? 'bg-[#252a31] border-blue-500 text-white' : 'border-transparent hover:bg-[#252a31]'}
                                                 ${isSidebarOpen ? 'px-5' : 'px-0 justify-center'}
                                             `}
+                                            title={!isSidebarOpen ? menu.title : ""}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <span className={`${activeMenu === menu.id ? 'text-blue-500' : 'text-[#8a95a5]'}`}>{menu.icon}</span>
@@ -343,7 +364,10 @@
 
                         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#f4f6f9] p-4 sm:p-6">
                             {activeMenu === 'menu1' ? <ProductionReportModule /> : 
-                             <div className="p-6 bg-[#1a1d21] text-white rounded border-t-2 border-green-500 text-center"><h2 className="text-green-400 font-bold text-xl mb-2">DASHBOARD MONITOR</h2><p className="text-gray-400">Dalam Tahap Pengembangan...</p></div>}
+                             <div className="p-6 bg-[#1a1d21] text-white rounded border-t-2 border-green-500 text-center shadow-lg">
+                                 <h2 className="text-green-400 font-bold text-xl mb-2 uppercase">{menus.find(m => m.id === activeMenu)?.title}</h2>
+                                 <p className="text-gray-400">Modul ini dalam tahap pengembangan...</p>
+                             </div>}
                         </main>
                     </div>
                 </div>
