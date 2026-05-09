@@ -1,42 +1,18 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Report System - PT. HSSI</title>
-    
+    <title>Production System - PT. HSSI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Excel Table Styles dari Kode Anda */
-        .excel-table { border-collapse: collapse; width: 100%; font-size: 11px; }
-        .excel-table th, .excel-table td { border: 1px solid #000; padding: 4px; text-align: center; vertical-align: middle; white-space: nowrap; }
-        .excel-table th { background-color: #f3f4f6; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-        .excel-table thead tr:nth-child(2) th { top: 29px; background-color: #e0f2fe; }
-        .excel-table tbody tr:hover { background-color: #fef08a; }
-        
-        .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; }
-        .excel-table th.sticky-col { z-index: 15; background-color: #f3f4f6; }
-
-        /* Loading Spinner */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
-        
-        @media print {
-            .no-print { display: none !important; }
-            .excel-table { font-size: 8pt; }
-            @page { size: landscape; margin: 10mm; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        }
+        .login-gradient { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); }
+        .excel-table th, .excel-table td { border: 1px solid #000; padding: 4px; text-align: center; font-size: 11px; }
+        .tab-active { border-bottom: 4px solid #ef4444; color: #b91c1c; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -44,251 +20,199 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzh-4ByxkDMIwzg7EFYp6X21UIFSaD2vePeKwv-koxNV2vS9GXkjmo_Y_RlVL2I0dF4/exec";
 
-        // URL API GOOGLE APPS SCRIPT ANDA
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyDnnnHIkF_ysjggqZR56pYcaT_t-YLVInwaufzvp6OvZCAviMirwpMyR92Gu6jKtxguA/exec';
-
-        // --- IKON SVG ---
-        const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
-        const IconReport = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
-        const IconUpload = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
-        const IconAnalyze = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><circle cx="12" cy="12" r="3"/></svg>;
-        const IconPrint = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
-        const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
-
-        // =====================================================================
-        // KOMPONEN: MODUL PRODUCTION REPORT (Hasil Migrasi Kode Anda)
-        // =====================================================================
-        const ProductionReportModule = ({ user }) => {
-            const [rows, setRows] = useState([]);
+        // ==========================================
+        // COMPONENT: LOGIN (Ref: image_a12583.jpg)
+        // ==========================================
+        const LoginPage = ({ onLogin }) => {
+            const [form, setForm] = useState({ username: '', password: '' });
             const [loading, setLoading] = useState(false);
-            const [header, setHeader] = useState({ 
-                tanggal: new Date().toISOString().split('T')[0], 
-                line: user.name, 
-                ot: '' 
-            });
-            const [members, setMembers] = useState(Array(10).fill(''));
-            const [showScanner, setShowScanner] = useState(false);
-            const scannerRef = useRef(null);
 
-            // Fetch Data saat komponen dimuat
-            useEffect(() => { loadData(); }, [header.tanggal]);
-
-            const loadData = async () => {
+            const handleLogin = async (e) => {
+                e.preventDefault();
                 setLoading(true);
-                try {
-                    const response = await fetch(`${API_URL}?action=getData&date=${header.tanggal}&line=${header.line}`);
-                    const result = await response.json();
-                    if (result.success) setRows(result.data);
-                } catch (e) { console.error("Load failed", e); }
-                setLoading(false);
+                // Simulasi Fetch ke GAS action: login
+                onLogin({ name: form.username.toUpperCase(), role: 'Operator' }); 
             };
-
-            const calculateTotals = () => {
-                const coil = rows.length;
-                const berat = rows.reduce((acc, row) => acc + (parseFloat(row.weight) || 0), 0);
-                return { coil, berat: berat.toFixed(2) };
-            };
-
-            const totals = calculateTotals();
 
             return (
-                <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen">
-                    
-                    {/* Header Controls (No Print) */}
-                    <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
-                        <div className="flex flex-wrap gap-4 items-end">
-                            <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
-                                <input type="date" className="border p-2 rounded text-sm w-40 font-bold" value={header.tanggal} onChange={e => setHeader({...header, tanggal: e.target.value})} />
+                <div className="h-screen w-full flex items-center justify-center login-gradient">
+                    <div className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-white/20 backdrop-blur-sm">
+                        <div className="text-center mb-8">
+                            <div className="w-20 h-20 bg-blue-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
                             </div>
-                            <div><label className="block text-xs font-bold mb-1 uppercase">Line</label>
-                                <input type="text" readOnly className="border p-2 rounded text-sm w-32 bg-gray-100 font-bold text-center" value={header.line} />
-                            </div>
-                            <button onClick={loadData} className="bg-blue-100 text-blue-700 p-2 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
+                            <h1 className="text-2xl font-black text-blue-900 tracking-tighter">HSSI <span className="text-blue-500">PRODUCTION</span></h1>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Personnel Authentication</p>
                         </div>
-                        
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={() => setShowScanner(true)} className="bg-yellow-500 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-yellow-600 shadow-sm uppercase">Scan QR</button>
-                            <button className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">Tambah Manual</button>
-                            <button className="bg-purple-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-purple-700 shadow-sm uppercase">Member</button>
-                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
-                        </div>
-                    </div>
-
-                    {/* Print Header (Gaya PR V1) */}
-                    <div className="w-full flex justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
-                        <div className="w-1/3 text-lg font-bold">
-                            Tanggal : <span className="border-b border-black min-w-[150px] inline-block ml-2">{new Date(header.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span>
-                        </div>
-                        <div className="w-1/3 text-center">
-                            <h1 className="text-3xl font-black tracking-widest uppercase">PRODUCTION REPORT</h1>
-                        </div>
-                        <div className="w-1/3 flex justify-end gap-4 font-bold">
-                            <div className="border-2 border-black p-2 min-w-[80px] text-center">
-                                <div className="text-[10px]">LINE</div><div>{header.line}</div>
-                            </div>
-                            <div className="border-2 border-black p-2 min-w-[80px] text-center flex items-center justify-center">
-                                <span className="mr-2 text-[10px]">OT</span> <span className="border-b border-black w-10"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Main Excel Table */}
-                    <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                        <table className="excel-table">
-                            <thead>
-                                <tr>
-                                    <th rowSpan="2" className="sticky-col no-print">Aksi</th>
-                                    <th rowSpan="2" className="w-10">NO</th>
-                                    <th rowSpan="2" className="w-32">CC NO</th>
-                                    <th rowSpan="2" className="w-32">Customer</th>
-                                    <th rowSpan="2" className="w-24">Spec</th>
-                                    <th rowSpan="2" className="w-32">MC/Semi Size</th>
-                                    <th rowSpan="2" className="w-24">Actual Width</th>
-                                    <th rowSpan="2" className="w-20">Weight</th>
-                                    <th rowSpan="2" className="w-32">Product Size</th>
-                                    <th rowSpan="2" className="w-16">Qty FG</th>
-                                    <th rowSpan="2" className="w-16">Qty NG</th>
-                                    <th rowSpan="2" className="w-20">Qty Total</th>
-                                    <th rowSpan="2" className="w-24">Total Length</th>
-                                    <th rowSpan="2" className="w-20">Coil Set</th>
-                                    <th rowSpan="2" className="w-20">Start</th>
-                                    <th rowSpan="2" className="w-20">End</th>
-                                    <th rowSpan="2" className="w-24">Produk Keluar</th>
-                                    <th colSpan="10" className="bg-blue-100 uppercase">Down Time (Minutes)</th>
-                                    <th rowSpan="2" className="w-24">Line Speed</th>
-                                    <th rowSpan="2" className="w-48">Remark</th>
-                                </tr>
-                                <tr>
-                                    <th className="bg-blue-50">TBM</th><th className="bg-blue-50">Packing</th>
-                                    <th className="bg-blue-50">Wait MC</th><th className="bg-blue-50">Wait Hagumi</th>
-                                    <th className="bg-blue-50">Wait Crane</th><th className="bg-blue-50">Hagumi/Sep</th>
-                                    <th className="bg-blue-50">Winder</th><th className="bg-blue-50">Cleaning</th>
-                                    <th className="bg-blue-50">Machine Prob</th><th className="bg-blue-50">Other</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.length === 0 ? (
-                                    <tr><td colSpan="28" className="p-8 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
-                                ) : rows.map((r, i) => (
-                                    <tr key={i}>
-                                        <td className="sticky-col no-print bg-white">
-                                            <div className="flex gap-2 justify-center">
-                                                <button className="text-blue-600">✎</button>
-                                                <button className="text-red-600">🗑</button>
-                                            </div>
-                                        </td>
-                                        <td>{i+1}</td>
-                                        <td className="font-bold">{r.ccno}</td><td>{r.customer}</td><td>{r.spec}</td>
-                                        <td>{r.mc_semi_prod_size}</td><td>{r.actual_width_mc}</td><td className="font-bold">{r.weight}</td>
-                                        <td>{r.product_size}</td><td>{r.qty_fg}</td><td>{r.qty_ng}</td>
-                                        <td className="font-bold bg-gray-100">{r.qty_total}</td><td>{r.total_length}</td>
-                                        <td>{r.coil_set_lifter}</td><td>{r.start_process}</td><td>{r.end_process}</td>
-                                        <td>{r.produk_keluar_mesin}</td>
-                                        <td className="bg-blue-50/30">{r.dt_tbm}</td><td className="bg-blue-50/30">{r.dt_packing_coil_back}</td>
-                                        <td className="bg-blue-50/30">{r.dt_waiting_mc}</td><td className="bg-blue-50/30">{r.dt_waiting_hagumi}</td>
-                                        <td className="bg-blue-50/30">{r.dt_waiting_crane}</td><td className="bg-blue-50/30">{r.dt_hagumi_separator}</td>
-                                        <td className="bg-blue-50/30">{r.dt_winder_top_end}</td><td className="bg-blue-50/30">{r.dt_cleaning_mesin}</td>
-                                        <td className="bg-blue-50/30">{r.dt_machine_problem}</td><td className="bg-blue-50/30">{r.dt_other}</td>
-                                        <td>{r.line_speed}</td><td className="text-left">{r.remark}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Footer Area (Gaya PR V1) */}
-                    <div className="mt-4 border border-black text-[10px] flex flex-wrap" style={{ pageBreakInside: 'avoid' }}>
-                        <div className="w-1/4 border-r border-black p-2">
-                            <div className="font-bold mb-1">Line Member</div>
-                            <table className="w-full border-collapse border border-black text-center">
-                                {[1, 2, 3, 4, 5].map(n => (
-                                    <tr key={n}>
-                                        <td className="border border-black w-6">{n}</td><td className="border border-black h-4"></td>
-                                        <td className="border border-black w-6">{n+5}</td><td className="border border-black h-4"></td>
-                                    </tr>
-                                ))}
-                            </table>
-                        </div>
-                        <div className="w-1/4 border-r border-black p-2 flex flex-col justify-end">
-                            <div className="text-right font-bold mb-2 uppercase">Total Proses</div>
-                            <table className="w-full border-collapse border border-black">
-                                <tr><td className="border border-black p-1 bg-gray-50 uppercase">Coil / Skid</td><td className="border border-black p-1 text-center font-bold">{totals.coil}</td></tr>
-                                <tr><td className="border border-black p-1 bg-gray-50 uppercase">Berat</td><td className="border border-black p-1 text-center font-bold">{totals.berat}</td></tr>
-                            </table>
-                        </div>
-                        <div className="w-2/5 border-r border-black p-2 bg-pink-100/50">
-                            <div className="font-bold mb-1 uppercase">Definisi • Rule</div>
-                            <p>• Coil set: Memasukkan Coil ke Drum (Persiapan, Visual cek, Scan).</p>
-                            <p>• Start Process: Setelah bagian top coil ditarik recoiler / Running Otomatis.</p>
-                            <p>• End Process: Setelah produk terlepas dari drum / Potongan terakhir.</p>
-                            <p>• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
-                        </div>
-                        <div className="flex-1 p-2 flex flex-col">
-                            <div className="border border-black flex-1 flex flex-col">
-                                <div className="text-center border-b border-black py-1 uppercase">Cek Leader</div>
-                            </div>
-                        </div>
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <input type="text" placeholder="USERNAME" required className="w-full bg-gray-50 border-2 border-gray-100 p-4 rounded-2xl focus:border-blue-500 outline-none font-bold" onChange={e => setForm({...form, username: e.target.value})} />
+                            <input type="password" placeholder="PASSWORD" required className="w-full bg-gray-50 border-2 border-gray-100 p-4 rounded-2xl focus:border-blue-500 outline-none font-bold" onChange={e => setForm({...form, password: e.target.value})} />
+                            <button className="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-xl hover:bg-blue-700 transition-all active:scale-95">LOGIN SYSTEM</button>
+                        </form>
                     </div>
                 </div>
             );
         };
 
-        // =====================================================================
-        // KOMPONEN: MAIN LAYOUT (Sidebar & Navigation)
-        // =====================================================================
+        // ==========================================
+        // COMPONENT: MAIN MODULE
+        // ==========================================
         const App = () => {
-            const [user, setUser] = useState({ name: 'LV1', role: 'Operator' });
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            const [user, setUser] = useState(null);
             const [activeMenu, setActiveMenu] = useState('menu1');
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [activeTab, setActiveTab] = useState('header'); // header | proses | downtime
 
-            const menus = [
-                { id: 'menu1', title: 'Production Report', icon: <IconReport /> },
-                { id: 'menu2', title: 'Dashboard Monitor', icon: <IconDashboard /> },
-                { id: 'menu3', title: 'Upload Planning', icon: <IconUpload /> },
-                { id: 'menu4', title: 'OEE Analysis', icon: <IconAnalyze /> },
-                { id: 'menu5', title: 'Print NG Report', icon: <IconPrint /> },
-            ];
+            // State Data Form
+            const [formData, setFormData] = useState({
+                // Header
+                tanggal: new Date().toISOString().split('T')[0],
+                leader: '', ot: '', members: '',
+                // Proses
+                ccno: '', customer: '', spec: '', rawSize: '', actualWidth: '', weightRaw: '', productSize: '', qtyFG: 0, qtyNG: 0,
+                startProc: '', endProc: '', prodKeluar: '', lineSpeed: '', remark: '',
+                // Downtime
+                tbm: 0, packBack: 0, waitMC: 0, waitHagumi: 0, waitCrane: 0, hagumiSep: 0, winder: 0, cleaning: 0, machineProb: 0
+            });
+
+            if (!user) return <LoginPage onLogin={setUser} />;
+
+            // LOGIKA SCANNER QR SESUAI INSTRUKSI
+            const handleQRScan = async (text) => {
+                const p = text.split(',');
+                if(p.length < 6) return alert("QR Code Tidak Valid!");
+
+                const ccNoClean = p[0].slice(0, -1); // Hilangkan karakter terakhir
+                const specCode = p[1];
+                const rawSize = p[2];
+                const weightRaw = p[5];
+
+                // Update state sementara
+                setFormData(prev => ({
+                    ...prev,
+                    ccno: ccNoClean,
+                    rawSize: rawSize,
+                    weightRaw: weightRaw
+                }));
+
+                // Cari Spec di Master_Spec via GAS
+                // Fetch logic... (Dianggap berhasil mengupdate spec)
+                setActiveTab('proses'); // Pindah ke tab proses setelah scan
+            };
 
             return (
                 <div className="flex h-screen bg-[#f4f6f9] overflow-hidden">
                     {/* SIDEBAR */}
-                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col z-20 shadow-2xl ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
                         <div className="h-[60px] bg-[#22272e] flex items-center justify-center border-b border-[#1e2228]">
-                            {isSidebarOpen ? <span className="font-bold text-xl text-white tracking-widest uppercase">HSSI <span className="text-blue-500">SYSTEM</span></span> : <span className="text-blue-500 font-bold">HS</span>}
+                            <span className="font-black text-white text-xl uppercase">{isSidebarOpen ? 'HSSI SYSTEM' : 'HS'}</span>
                         </div>
-                        <div className="flex-1 overflow-y-auto py-6">
-                            <ul className="space-y-1">
-                                {menus.map((menu) => (
-                                    <li key={menu.id}>
-                                        <button onClick={() => setActiveMenu(menu.id)}
-                                            className={`w-full flex items-center py-3 transition-all border-l-4 ${activeMenu === menu.id ? 'bg-[#252a31] border-blue-500 text-white' : 'border-transparent hover:bg-[#252a31] hover:text-white'} ${isSidebarOpen ? 'px-5' : 'justify-center'}`}
-                                            title={!isSidebarOpen ? menu.title : ""}
-                                        >
-                                            <span className={`${activeMenu === menu.id ? 'text-blue-500' : ''}`}>{menu.icon}</span>
-                                            {isSidebarOpen && <span className="ml-4 text-sm font-medium tracking-wide">{menu.title}</span>}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="p-4 bg-[#22272e] text-[10px] text-center font-bold uppercase tracking-widest text-gray-500">v2.5 Final Architecture</div>
+                        <nav className="flex-1 p-2 space-y-1 mt-4">
+                            <button onClick={() => setActiveMenu('menu1')} className={`w-full flex items-center p-3 rounded-xl transition-all ${activeMenu === 'menu1' ? 'bg-blue-600 text-white shadow-lg' : 'hover:bg-gray-700'}`}>
+                                <span className="text-xl">📝</span> {isSidebarOpen && <span className="ml-3 font-bold text-xs">PRODUCTION REPORT</span>}
+                            </button>
+                            <button className="w-full flex items-center p-3 rounded-xl hover:bg-gray-700">
+                                <span className="text-xl">📊</span> {isSidebarOpen && <span className="ml-3 font-bold text-xs text-gray-500">DASHBOARD</span>}
+                            </button>
+                        </nav>
+                        <button onClick={() => setUser(null)} className="p-4 bg-red-950 text-white font-bold text-[10px] uppercase">Logout</button>
                     </div>
 
-                    {/* CONTENT AREA */}
-                    <div className="flex-1 flex flex-col overflow-hidden relative">
-                        <header className="h-[60px] bg-[#a84444] shadow-md flex items-center px-4 z-10 gap-4 no-print">
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white p-2 hover:bg-[#913b3b] rounded transition-colors"><IconMenu /></button>
-                            <h1 className="text-lg font-bold text-white uppercase tracking-wider">{menus.find(m => m.id === activeMenu)?.title}</h1>
+                    {/* CONTENT */}
+                    <div className="flex-1 flex flex-col relative overflow-hidden">
+                        <header className="h-[60px] bg-[#a84444] shadow-md flex items-center justify-between px-6">
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white text-2xl">☰</button>
+                            <h1 className="text-white font-black uppercase tracking-widest italic">Production Report Module</h1>
                         </header>
 
-                        <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#f4f6f9]">
-                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : 
-                             <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600">
-                                 <h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">Module Under Development</h2>
-                             </div>}
+                        <main className="flex-1 p-6 overflow-auto">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-xl font-black text-gray-800 uppercase tracking-tighter">Daily Production Logs</h2>
+                                    <button onClick={() => setShowAddModal(true)} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all">+ TAMBAH DATA</button>
+                                </div>
+                                <div className="overflow-auto">
+                                    <table className="excel-table w-full">
+                                        <thead>
+                                            <tr className="bg-gray-100">
+                                                <th>NO</th><th>CC NO</th><th>SPEC</th><th>SIZE</th><th>WEIGHT</th><th>QTY FG</th><th>QTY NG</th><th>REMARK</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td colSpan="8" className="p-10 text-gray-300 italic uppercase font-bold">No Data Entry in this Session</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </main>
                     </div>
+
+                    {/* MODAL MULTI-SUBFORM */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-white/20">
+                                {/* TAB NAVIGATION */}
+                                <div className="flex bg-gray-50 border-b">
+                                    <button onClick={() => setActiveTab('header')} className={`flex-1 p-4 text-xs font-black uppercase ${activeTab === 'header' ? 'tab-active bg-white' : ''}`}>1. Sub-Form Header</button>
+                                    <button onClick={() => setActiveTab('proses')} className={`flex-1 p-4 text-xs font-black uppercase ${activeTab === 'proses' ? 'tab-active bg-white' : ''}`}>2. Sub-Form Proses</button>
+                                    <button onClick={() => setActiveTab('downtime')} className={`flex-1 p-4 text-xs font-black uppercase ${activeTab === 'downtime' ? 'tab-active bg-white' : ''}`}>3. Sub-Form Downtime</button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-8 bg-white">
+                                    {/* FORM 1: HEADER */}
+                                    {activeTab === 'header' && (
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div><label className="text-[10px] font-black text-gray-400">TANGGAL</label><input type="date" className="w-full border-2 p-3 rounded-xl font-bold" value={formData.tanggal} /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400">LINE (AUTO)</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold bg-gray-50" value={user.name} readOnly /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400">LEADER</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400">OT (OVERTIME)</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div className="col-span-2"><label className="text-[10px] font-black text-gray-400">LINE MEMBERS (PISAHKAN KOMA)</label><textarea className="w-full border-2 p-3 rounded-xl font-bold" placeholder="Member 1, Member 2..."></textarea></div>
+                                        </div>
+                                    )}
+
+                                    {/* FORM 2: PROSES */}
+                                    {activeTab === 'proses' && (
+                                        <div className="space-y-6">
+                                            <div className="flex justify-center p-4 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200">
+                                                <button onClick={() => handleQRScan("250807007-000000I,0378,2.500 X 1000.0 X COIL,56H00498,1,4710,,9,1")} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-xs shadow-lg hover:bg-blue-700">📷 AKTIFKAN QR SCANNER</button>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-4">
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">CC NO</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold bg-blue-50" value={formData.ccno} readOnly /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Spec</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold bg-blue-50" value={formData.spec} readOnly /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Raw Material Size</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold bg-blue-50" value={formData.rawSize} readOnly /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Weight Raw</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold bg-blue-50" value={formData.weightRaw} readOnly /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Qty FG</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Qty NG</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Start Proc</label><input type="time" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">End Proc</label><input type="time" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                                <div><label className="text-[10px] font-black text-gray-400 uppercase">Remark</label><input type="text" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* FORM 3: DOWNTIME */}
+                                    {activeTab === 'downtime' && (
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">TBM</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">Wait MC</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">Wait Hagumi</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">Machine Problem</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">Cleaning Mesin</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                            <div><label className="text-[10px] font-black text-gray-400 uppercase">Hagumi/Separator</label><input type="number" className="w-full border-2 p-3 rounded-xl font-bold" /></div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="p-6 border-t bg-gray-50 flex justify-end gap-3">
+                                    <button onClick={() => setShowAddModal(false)} className="px-8 py-3 text-gray-400 font-black text-xs uppercase">Batal</button>
+                                    <button className="bg-green-600 text-white px-10 py-3 rounded-2xl font-black text-xs shadow-xl hover:bg-green-700 transform active:scale-95 transition-all uppercase tracking-widest">Simpan Data Lengkap</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
