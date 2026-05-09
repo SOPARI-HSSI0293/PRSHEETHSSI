@@ -1,28 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Report - PT. HSSI</title>
+    <title>Production Report System - PT. HSSI</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Excel Table Styles dari Kode Anda */
+        .excel-table { border-collapse: collapse; width: 100%; font-size: 11px; }
+        .excel-table th, .excel-table td { border: 1px solid #000; padding: 4px; text-align: center; vertical-align: middle; white-space: nowrap; }
+        .excel-table th { background-color: #f3f4f6; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+        .excel-table thead tr:nth-child(2) th { top: 29px; background-color: #e0f2fe; }
+        .excel-table tbody tr:hover { background-color: #fef08a; }
+        
+        .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; }
+        .excel-table th.sticky-col { z-index: 15; background-color: #f3f4f6; }
+
+        /* Loading Spinner */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); }
         
-        /* Style Tabel ala Excel PR V1 */
-        .excel-table { border-collapse: collapse; width: 100%; font-size: 11px; }
-        .excel-table th, .excel-table td { border: 1px solid #000; padding: 6px 4px; text-align: center; vertical-align: middle; white-space: nowrap; }
-        .excel-table th { background-color: #f3f4f6; font-weight: bold; position: sticky; top: 0; z-index: 10; font-size: 10px; }
-        .excel-table thead tr:nth-child(2) th { top: 29px; background-color: #e0f2fe; } /* Warna biru muda untuk sub-header */
-        .excel-table tbody tr:hover { background-color: #fef08a; } /* Efek hover kuning */
+        @media print {
+            .no-print { display: none !important; }
+            .excel-table { font-size: 8pt; }
+            @page { size: landscape; margin: 10mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
     </style>
 </head>
 <body>
@@ -30,177 +44,204 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzh-4ByxkDMIwzg7EFYp6X21UIFSaD2vePeKwv-koxNV2vS9GXkjmo_Y_RlVL2I0dF4/exec";
+
+        // URL API GOOGLE APPS SCRIPT ANDA
+        const API_URL = 'https://script.google.com/macros/s/AKfycbyDnnnHIkF_ysjggqZR56pYcaT_t-YLVInwaufzvp6OvZCAviMirwpMyR92Gu6jKtxguA/exec';
 
         // --- IKON SVG ---
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
         const IconReport = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>;
         const IconUpload = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
-        const IconAnalyze = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="m17 20.66-1-1.73"/><path d="M11 10.27 7 3.34"/><path d="m20.66 17-1.73-1"/><path d="m3.34 7 1.73 1"/><path d="M14 12h8"/><path d="M2 12h2"/><path d="m20.66 7-1.73 1"/><path d="m3.34 17 1.73-1"/><path d="m17 3.34-1 1.73"/><path d="m11 13.73-4 6.93"/></svg>;
+        const IconAnalyze = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><circle cx="12" cy="12" r="3"/></svg>;
         const IconPrint = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
-        const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>;
-        const IconCamera = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>;
-        const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+        const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
 
         // =====================================================================
-        // KOMPONEN 1: LOGIN PAGE
+        // KOMPONEN: MODUL PRODUCTION REPORT (Hasil Migrasi Kode Anda)
         // =====================================================================
-        const LoginPage = ({ onLogin }) => {
-            const [creds, setCreds] = useState({ username: '', password: '' });
-            return (
-                <div className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-[#1e3a8a] to-[#1e40af]">
-                    <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md">
-                        <div className="text-center mb-6">
-                            <h1 className="text-3xl font-black text-blue-900 tracking-tighter">HSSI <span className="text-blue-500">SYSTEM</span></h1>
-                            <p className="text-xs font-bold text-gray-500 uppercase mt-2 border-t pt-2">Sign In to Dashboard</p>
-                        </div>
-                        <div className="space-y-4">
-                            <input type="text" placeholder="USERNAME" className="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 font-bold" onChange={e => setCreds({...creds, username: e.target.value})} />
-                            <input type="password" placeholder="PASSWORD" className="w-full border-2 p-3 rounded-xl outline-none focus:border-blue-500 font-bold" onChange={e => setCreds({...creds, password: e.target.value})} />
-                            <button onClick={() => onLogin({name: creds.username.toUpperCase()})} className="w-full bg-blue-600 text-white p-4 rounded-xl font-bold shadow-lg hover:bg-blue-700 active:scale-95 transition-all">LOGIN</button>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        // =====================================================================
-        // KOMPONEN 2: PRODUCTION REPORT (Gambar Update)
-        // =====================================================================
-        const ProductionReportModule = () => {
+        const ProductionReportModule = ({ user }) => {
             const [rows, setRows] = useState([]);
-            const [header, setHeader] = useState({ tanggal: new Date().toISOString().split('T')[0], line: 'LV1', leader: '', ot: '' });
+            const [loading, setLoading] = useState(false);
+            const [header, setHeader] = useState({ 
+                tanggal: new Date().toISOString().split('T')[0], 
+                line: user.name, 
+                ot: '' 
+            });
             const [members, setMembers] = useState(Array(10).fill(''));
             const [showScanner, setShowScanner] = useState(false);
-            const [showFormModal, setShowFormModal] = useState(false);
-            const [currentEntry, setCurrentEntry] = useState(null);
+            const scannerRef = useRef(null);
 
-            const handleScanSuccess = (text) => {
-                const parts = text.split(',');
-                setCurrentEntry({
-                    ccno: parts[0]?.trim() || '', spec: parts[1]?.trim() || '', mc_semi: parts[2]?.trim() || '', weight: parts[5]?.trim() || '',
-                    customer: '', actual_width: '', product_size: '', qty_fg: '', qty_ng: '', remark: ''
-                });
-                setShowScanner(false);
-                setShowFormModal(true);
+            // Fetch Data saat komponen dimuat
+            useEffect(() => { loadData(); }, [header.tanggal]);
+
+            const loadData = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(`${API_URL}?action=getData&date=${header.tanggal}&line=${header.line}`);
+                    const result = await response.json();
+                    if (result.success) setRows(result.data);
+                } catch (e) { console.error("Load failed", e); }
+                setLoading(false);
             };
 
-            const handleSave = () => {
-                setRows([...rows, {...currentEntry, no: rows.length + 1}]);
-                setShowFormModal(false);
-                // Trigger fetch to GAS here...
+            const calculateTotals = () => {
+                const coil = rows.length;
+                const berat = rows.reduce((acc, row) => acc + (parseFloat(row.weight) || 0), 0);
+                return { coil, berat: berat.toFixed(2) };
             };
+
+            const totals = calculateTotals();
 
             return (
-                <div className="bg-white rounded shadow-sm min-h-[80vh]">
-                    {/* Header Banner - Persis Gambar */}
-                    <div className="bg-[#1e3a8a] text-white p-3 flex justify-between items-center border-b-4 border-yellow-400 rounded-t">
-                        <div className="font-black italic text-lg uppercase tracking-widest">PT. HSSI - Production Report</div>
-                        <div className="text-[10px] font-bold bg-yellow-400 text-blue-900 px-2 py-1 rounded">VER 2.1</div>
+                <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen">
+                    
+                    {/* Header Controls (No Print) */}
+                    <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
+                        <div className="flex flex-wrap gap-4 items-end">
+                            <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
+                                <input type="date" className="border p-2 rounded text-sm w-40 font-bold" value={header.tanggal} onChange={e => setHeader({...header, tanggal: e.target.value})} />
+                            </div>
+                            <div><label className="block text-xs font-bold mb-1 uppercase">Line</label>
+                                <input type="text" readOnly className="border p-2 rounded text-sm w-32 bg-gray-100 font-bold text-center" value={header.line} />
+                            </div>
+                            <button onClick={loadData} className="bg-blue-100 text-blue-700 p-2 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2">
+                            <button onClick={() => setShowScanner(true)} className="bg-yellow-500 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-yellow-600 shadow-sm uppercase">Scan QR</button>
+                            <button className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">Tambah Manual</button>
+                            <button className="bg-purple-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-purple-700 shadow-sm uppercase">Member</button>
+                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
+                        </div>
                     </div>
 
-                    {/* Toolbar Panel - Persis Gambar */}
-                    <div className="flex flex-wrap items-center gap-3 bg-gray-50 p-3 border-x border-black">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold">DATE:</span>
-                            <input type="date" className="border border-black p-1 text-xs font-bold" value={header.tanggal} onChange={e => setHeader({...header, tanggal: e.target.value})} />
+                    {/* Print Header (Gaya PR V1) */}
+                    <div className="w-full flex justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
+                        <div className="w-1/3 text-lg font-bold">
+                            Tanggal : <span className="border-b border-black min-w-[150px] inline-block ml-2">{new Date(header.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold">LINE:</span>
-                            <select className="border border-black p-1 text-xs font-bold" value={header.line} onChange={e => setHeader({...header, line: e.target.value})}>
-                                <option>LV1</option><option>LM1</option><option>SL1</option>
-                            </select>
+                        <div className="w-1/3 text-center">
+                            <h1 className="text-3xl font-black tracking-widest uppercase">PRODUCTION REPORT</h1>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold">LEADER:</span>
-                            <input type="text" className="border border-black p-1 text-xs uppercase w-32 font-bold" value={header.leader} onChange={e => setHeader({...header, leader: e.target.value})} />
+                        <div className="w-1/3 flex justify-end gap-4 font-bold">
+                            <div className="border-2 border-black p-2 min-w-[80px] text-center">
+                                <div className="text-[10px]">LINE</div><div>{header.line}</div>
+                            </div>
+                            <div className="border-2 border-black p-2 min-w-[80px] text-center flex items-center justify-center">
+                                <span className="mr-2 text-[10px]">OT</span> <span className="border-b border-black w-10"></span>
+                            </div>
                         </div>
-                        {/* Tombol Scan In-line */}
-                        <button onClick={() => setShowScanner(true)} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded shadow flex items-center gap-2 text-[11px] border border-blue-800 ml-2 transition-colors">
-                            <IconCamera /> SCAN QR LABEL
-                        </button>
                     </div>
 
-                    {/* Line Members Bar - Persis Gambar */}
-                    <div className="flex flex-wrap gap-1 p-2 bg-gray-100 border-x border-b border-black">
-                        {members.map((m, i) => (
-                            <input key={i} className="border border-gray-400 text-[10px] p-1 w-16 text-center uppercase font-bold focus:border-blue-500 outline-none" 
-                                placeholder={`M${i+1}`} value={m} onChange={e => {
-                                    const nm = [...members]; nm[i] = e.target.value; setMembers(nm);
-                                }} />
-                        ))}
-                    </div>
-
-                    {/* Table - Double Header Style PR V1 */}
-                    <div className="overflow-x-auto p-2">
+                    {/* Main Excel Table */}
+                    <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '60vh' }}>
                         <table className="excel-table">
                             <thead>
                                 <tr>
+                                    <th rowSpan="2" className="sticky-col no-print">Aksi</th>
                                     <th rowSpan="2" className="w-10">NO</th>
                                     <th rowSpan="2" className="w-32">CC NO</th>
-                                    <th rowSpan="2" className="w-24">CUSTOMER</th>
-                                    <th rowSpan="2" className="w-24">SPEC</th>
-                                    <th colSpan="2">MATERIAL RAW</th>
-                                    <th colSpan="2">PRODUCT</th>
-                                    <th colSpan="2">REMARK</th>
+                                    <th rowSpan="2" className="w-32">Customer</th>
+                                    <th rowSpan="2" className="w-24">Spec</th>
+                                    <th rowSpan="2" className="w-32">MC/Semi Size</th>
+                                    <th rowSpan="2" className="w-24">Actual Width</th>
+                                    <th rowSpan="2" className="w-20">Weight</th>
+                                    <th rowSpan="2" className="w-32">Product Size</th>
+                                    <th rowSpan="2" className="w-16">Qty FG</th>
+                                    <th rowSpan="2" className="w-16">Qty NG</th>
+                                    <th rowSpan="2" className="w-20">Qty Total</th>
+                                    <th rowSpan="2" className="w-24">Total Length</th>
+                                    <th rowSpan="2" className="w-20">Coil Set</th>
+                                    <th rowSpan="2" className="w-20">Start</th>
+                                    <th rowSpan="2" className="w-20">End</th>
+                                    <th rowSpan="2" className="w-24">Produk Keluar</th>
+                                    <th colSpan="10" className="bg-blue-100 uppercase">Down Time (Minutes)</th>
+                                    <th rowSpan="2" className="w-24">Line Speed</th>
+                                    <th rowSpan="2" className="w-48">Remark</th>
                                 </tr>
                                 <tr>
-                                    <th className="w-16">WIDTH</th><th className="w-16">WEIGHT</th>
-                                    <th className="w-16">FG</th><th className="w-16">NG</th>
-                                    <th className="w-48">KETERANGAN</th>
+                                    <th className="bg-blue-50">TBM</th><th className="bg-blue-50">Packing</th>
+                                    <th className="bg-blue-50">Wait MC</th><th className="bg-blue-50">Wait Hagumi</th>
+                                    <th className="bg-blue-50">Wait Crane</th><th className="bg-blue-50">Hagumi/Sep</th>
+                                    <th className="bg-blue-50">Winder</th><th className="bg-blue-50">Cleaning</th>
+                                    <th className="bg-blue-50">Machine Prob</th><th className="bg-blue-50">Other</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rows.length === 0 ? (
-                                    <tr><td colSpan="10" className="p-8 text-gray-400 italic font-bold">BELUM ADA DATA PROSES HARI INI</td></tr>
+                                    <tr><td colSpan="28" className="p-8 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
                                 ) : rows.map((r, i) => (
                                     <tr key={i}>
-                                        <td className="bg-gray-50 font-bold">{r.no}</td>
-                                        <td className="text-blue-700 font-bold">{r.ccno}</td>
-                                        <td>{r.customer}</td>
-                                        <td>{r.spec}</td>
-                                        <td>{r.actual_width}</td>
-                                        <td>{r.weight}</td>
-                                        <td className="font-bold">{r.qty_fg}</td>
-                                        <td className="bg-red-50 text-red-600 font-bold">{r.qty_ng}</td>
-                                        <td className="text-left">{r.remark}</td>
+                                        <td className="sticky-col no-print bg-white">
+                                            <div className="flex gap-2 justify-center">
+                                                <button className="text-blue-600">✎</button>
+                                                <button className="text-red-600">🗑</button>
+                                            </div>
+                                        </td>
+                                        <td>{i+1}</td>
+                                        <td className="font-bold">{r.ccno}</td><td>{r.customer}</td><td>{r.spec}</td>
+                                        <td>{r.mc_semi_prod_size}</td><td>{r.actual_width_mc}</td><td className="font-bold">{r.weight}</td>
+                                        <td>{r.product_size}</td><td>{r.qty_fg}</td><td>{r.qty_ng}</td>
+                                        <td className="font-bold bg-gray-100">{r.qty_total}</td><td>{r.total_length}</td>
+                                        <td>{r.coil_set_lifter}</td><td>{r.start_process}</td><td>{r.end_process}</td>
+                                        <td>{r.produk_keluar_mesin}</td>
+                                        <td className="bg-blue-50/30">{r.dt_tbm}</td><td className="bg-blue-50/30">{r.dt_packing_coil_back}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_mc}</td><td className="bg-blue-50/30">{r.dt_waiting_hagumi}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_crane}</td><td className="bg-blue-50/30">{r.dt_hagumi_separator}</td>
+                                        <td className="bg-blue-50/30">{r.dt_winder_top_end}</td><td className="bg-blue-50/30">{r.dt_cleaning_mesin}</td>
+                                        <td className="bg-blue-50/30">{r.dt_machine_problem}</td><td className="bg-blue-50/30">{r.dt_other}</td>
+                                        <td>{r.line_speed}</td><td className="text-left">{r.remark}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* Modals Dummy - Sederhana untuk fungsionalitas */}
-                    {showFormModal && (
-                        <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
-                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
-                                <h2 className="text-lg font-bold mb-4 border-b pb-2 uppercase">Input Produksi</h2>
-                                <div className="space-y-3">
-                                    <input type="text" placeholder="CCNO" className="w-full border p-2 rounded uppercase font-bold" value={currentEntry?.ccno} onChange={e => setCurrentEntry({...currentEntry, ccno: e.target.value})} />
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="number" placeholder="QTY FG" className="w-full border p-2 rounded" onChange={e => setCurrentEntry({...currentEntry, qty_fg: e.target.value})} />
-                                        <input type="number" placeholder="QTY NG" className="w-full border p-2 rounded text-red-600" onChange={e => setCurrentEntry({...currentEntry, qty_ng: e.target.value})} />
-                                    </div>
-                                    <input type="text" placeholder="Keterangan..." className="w-full border p-2 rounded" onChange={e => setCurrentEntry({...currentEntry, remark: e.target.value})} />
-                                    <button onClick={handleSave} className="w-full bg-green-600 text-white p-3 rounded font-bold mt-4 hover:bg-green-700">SIMPAN</button>
-                                    <button onClick={() => setShowFormModal(false)} className="w-full text-gray-500 font-bold mt-2 hover:text-gray-800">BATAL</button>
-                                </div>
+                    {/* Footer Area (Gaya PR V1) */}
+                    <div className="mt-4 border border-black text-[10px] flex flex-wrap" style={{ pageBreakInside: 'avoid' }}>
+                        <div className="w-1/4 border-r border-black p-2">
+                            <div className="font-bold mb-1">Line Member</div>
+                            <table className="w-full border-collapse border border-black text-center">
+                                {[1, 2, 3, 4, 5].map(n => (
+                                    <tr key={n}>
+                                        <td className="border border-black w-6">{n}</td><td className="border border-black h-4"></td>
+                                        <td className="border border-black w-6">{n+5}</td><td className="border border-black h-4"></td>
+                                    </tr>
+                                ))}
+                            </table>
+                        </div>
+                        <div className="w-1/4 border-r border-black p-2 flex flex-col justify-end">
+                            <div className="text-right font-bold mb-2 uppercase">Total Proses</div>
+                            <table className="w-full border-collapse border border-black">
+                                <tr><td className="border border-black p-1 bg-gray-50 uppercase">Coil / Skid</td><td className="border border-black p-1 text-center font-bold">{totals.coil}</td></tr>
+                                <tr><td className="border border-black p-1 bg-gray-50 uppercase">Berat</td><td className="border border-black p-1 text-center font-bold">{totals.berat}</td></tr>
+                            </table>
+                        </div>
+                        <div className="w-2/5 border-r border-black p-2 bg-pink-100/50">
+                            <div className="font-bold mb-1 uppercase">Definisi • Rule</div>
+                            <p>• Coil set: Memasukkan Coil ke Drum (Persiapan, Visual cek, Scan).</p>
+                            <p>• Start Process: Setelah bagian top coil ditarik recoiler / Running Otomatis.</p>
+                            <p>• End Process: Setelah produk terlepas dari drum / Potongan terakhir.</p>
+                            <p>• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
+                        </div>
+                        <div className="flex-1 p-2 flex flex-col">
+                            <div className="border border-black flex-1 flex flex-col">
+                                <div className="text-center border-b border-black py-1 uppercase">Cek Leader</div>
                             </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             );
         };
 
         // =====================================================================
-        // MAIN APP LOGIC (Sidebar Collapsible dengan 5 Menu)
+        // KOMPONEN: MAIN LAYOUT (Sidebar & Navigation)
         // =====================================================================
         const App = () => {
-            const [user, setUser] = useState(null);
+            const [user, setUser] = useState({ name: 'LV1', role: 'Operator' });
+            const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [activeMenu, setActiveMenu] = useState('menu1');
-            const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Fitur Minimize dikembalikan
 
-            // Fitur 1: Mengembalikan 5 Menu
             const menus = [
                 { id: 'menu1', title: 'Production Report', icon: <IconReport /> },
                 { id: 'menu2', title: 'Dashboard Monitor', icon: <IconDashboard /> },
@@ -209,70 +250,43 @@
                 { id: 'menu5', title: 'Print NG Report', icon: <IconPrint /> },
             ];
 
-            if (!user) return <LoginPage onLogin={setUser} />;
-
             return (
-                <div className="flex h-screen bg-[#f4f6f9] overflow-hidden font-sans">
-                    {/* SIDEBAR (Bisa Minimize) */}
-                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col z-20 shadow-xl ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                <div className="flex h-screen bg-[#f4f6f9] overflow-hidden">
+                    {/* SIDEBAR */}
+                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
                         <div className="h-[60px] bg-[#22272e] flex items-center justify-center border-b border-[#1e2228]">
-                            {isSidebarOpen ? (
-                                <span className="font-bold text-xl tracking-wider text-white">HSSI <span className="text-blue-500">SYSTEM</span></span>
-                            ) : (
-                                <span className="font-bold text-xl text-blue-500">HS</span>
-                            )}
+                            {isSidebarOpen ? <span className="font-bold text-xl text-white tracking-widest uppercase">HSSI <span className="text-blue-500">SYSTEM</span></span> : <span className="text-blue-500 font-bold">HS</span>}
                         </div>
-                        
-                        <div className={`p-4 border-b border-[#3b424d] flex items-center gap-3 ${!isSidebarOpen && 'justify-center'}`}>
-                            <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold flex-shrink-0">{user.name[0]}</div>
-                            {isSidebarOpen && (
-                                <div className="flex flex-col overflow-hidden">
-                                    <span className="text-white font-bold text-sm truncate">{user.name}</span>
-                                    <span className="text-[10px] text-green-500 font-bold uppercase tracking-widest">● Online</span>
-                                </div>
-                            )}
+                        <div className="flex-1 overflow-y-auto py-6">
+                            <ul className="space-y-1">
+                                {menus.map((menu) => (
+                                    <li key={menu.id}>
+                                        <button onClick={() => setActiveMenu(menu.id)}
+                                            className={`w-full flex items-center py-3 transition-all border-l-4 ${activeMenu === menu.id ? 'bg-[#252a31] border-blue-500 text-white' : 'border-transparent hover:bg-[#252a31] hover:text-white'} ${isSidebarOpen ? 'px-5' : 'justify-center'}`}
+                                            title={!isSidebarOpen ? menu.title : ""}
+                                        >
+                                            <span className={`${activeMenu === menu.id ? 'text-blue-500' : ''}`}>{menu.icon}</span>
+                                            {isSidebarOpen && <span className="ml-4 text-sm font-medium tracking-wide">{menu.title}</span>}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
-
-                        {isSidebarOpen && <div className="px-5 py-4 text-[10px] font-bold text-[#647180] uppercase tracking-widest">Navigation</div>}
-                        
-                        <nav className="flex-1 overflow-y-auto px-2 space-y-1 mt-2">
-                            {menus.map((menu) => (
-                                <button key={menu.id} onClick={() => setActiveMenu(menu.id)}
-                                    className={`w-full flex items-center py-3 rounded-lg transition-all 
-                                        ${activeMenu === menu.id ? 'bg-[#252a31] text-white border-l-4 border-blue-500' : 'hover:bg-[#252a31] border-l-4 border-transparent'}
-                                        ${isSidebarOpen ? 'px-4' : 'justify-center px-0'}
-                                    `}
-                                    title={!isSidebarOpen ? menu.title : ""}
-                                >
-                                    <span className={`${activeMenu === menu.id ? 'text-blue-500' : ''}`}>{menu.icon}</span>
-                                    {isSidebarOpen && <span className="ml-3 text-sm font-medium whitespace-nowrap">{menu.title}</span>}
-                                </button>
-                            ))}
-                        </nav>
-                        
-                        <button onClick={() => setUser(null)} className="p-4 bg-red-950 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-red-900 transition-colors flex justify-center">
-                            {isSidebarOpen ? 'SIGN OUT' : 'X'}
-                        </button>
+                        <div className="p-4 bg-[#22272e] text-[10px] text-center font-bold uppercase tracking-widest text-gray-500">v2.5 Final Architecture</div>
                     </div>
 
                     {/* CONTENT AREA */}
-                    <div className="flex-1 flex flex-col min-w-0 relative">
-                        {/* Topbar dengan Tombol Hamburger */}
-                        <header className="h-[60px] bg-[#a84444] shadow-md flex items-center px-4 z-10 gap-4">
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white p-1 hover:bg-[#913b3b] rounded transition-colors">
-                                <IconMenu />
-                            </button>
-                            <h1 className="text-lg font-bold text-white uppercase tracking-wider hidden sm:block">
-                                {menus.find(m => m.id === activeMenu)?.title}
-                            </h1>
+                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                        <header className="h-[60px] bg-[#a84444] shadow-md flex items-center px-4 z-10 gap-4 no-print">
+                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white p-2 hover:bg-[#913b3b] rounded transition-colors"><IconMenu /></button>
+                            <h1 className="text-lg font-bold text-white uppercase tracking-wider">{menus.find(m => m.id === activeMenu)?.title}</h1>
                         </header>
-                        
-                        <main className="flex-1 overflow-auto p-4 sm:p-6">
-                            {activeMenu === 'menu1' ? <ProductionReportModule /> : 
-                            <div className="p-10 bg-white rounded shadow-sm text-center border-t-4 border-blue-500">
-                                <h2 className="text-gray-400 font-black text-xl uppercase">{menus.find(m => m.id === activeMenu)?.title}</h2>
-                                <p className="text-sm text-gray-400 mt-2">Modul sedang dalam tahap pengembangan...</p>
-                            </div>}
+
+                        <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#f4f6f9]">
+                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : 
+                             <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600">
+                                 <h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">Module Under Development</h2>
+                             </div>}
                         </main>
                     </div>
                 </div>
