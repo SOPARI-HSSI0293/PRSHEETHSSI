@@ -399,73 +399,45 @@
                 setLoading(true);
                 setError('');
 
-                // ── Metode 1: JSONP (paling kompatibel dengan GAS, bypass CORS 100%) ──
+                // JSONP — satu-satunya cara bypass CORS pada GAS dari browser
                 const tryJSONP = () => new Promise((resolve, reject) => {
-                    const cbName = 'cb_' + Date.now();
+                    const cbName = '__gasLogin_' + Date.now();
                     const script = document.createElement('script');
                     const timer = setTimeout(() => {
+                        cleanup();
+                        reject(new Error('timeout'));
+                    }, 12000);
+                    const cleanup = () => {
                         delete window[cbName];
-                        document.body.removeChild(script);
-                        reject(new Error('JSONP timeout'));
-                    }, 10000);
-                    window[cbName] = (data) => {
+                        if (script.parentNode) script.parentNode.removeChild(script);
                         clearTimeout(timer);
-                        delete window[cbName];
-                        document.body.removeChild(script);
-                        resolve(data);
                     };
-                    script.src = `${API_URL}?action=login&username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password.trim())}&callback=${cbName}`;
-                    script.onerror = () => { clearTimeout(timer); reject(new Error('JSONP script error')); };
-                    document.body.appendChild(script);
+                    window[cbName] = (data) => { cleanup(); resolve(data); };
+                    script.onerror = () => { cleanup(); reject(new Error('script_error')); };
+                    script.src = `${API_URL}?action=login`
+                        + `&username=${encodeURIComponent(username.trim())}`
+                        + `&password=${encodeURIComponent(password.trim())}`
+                        + `&callback=${cbName}`;
+                    document.head.appendChild(script);
                 });
 
-                // ── Metode 2: GET biasa ──
-                const tryGet = async () => {
-                    const url = `${API_URL}?action=login&username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password.trim())}`;
-                    const res = await fetch(url, { redirect: 'follow' });
-                    const text = await res.text();
-                    return JSON.parse(text);
-                };
-
-                // ── Metode 3: POST dengan Content-Type text/plain (no preflight) ──
-                const tryPost = async () => {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'login', username: username.trim(), password: password.trim() }),
-                        redirect: 'follow'
-                    });
-                    const text = await res.text();
-                    return JSON.parse(text);
-                };
-
-                let result = null;
-                let lastError = '';
-
-                // Coba GET dulu (GAS doGet)
                 try {
-                    result = await tryGet();
-                } catch(e1) {
-                    lastError = 'GET: ' + e1.message;
-                    // Coba POST (GAS doPost)
-                    try {
-                        result = await tryPost();
-                    } catch(e2) {
-                        lastError += ' | POST: ' + e2.message;
-                        result = null;
+                    const result = await tryJSONP();
+                    setLoading(false);
+                    if (result.status === 'success') {
+                        onLogin(result.user);
+                    } else {
+                        setError(result.message || 'Username atau Password Salah!');
                     }
-                }
-
-                setLoading(false);
-
-                if (!result) {
-                    setError(`Koneksi gagal (${lastError}). Pastikan GAS di-deploy dengan akses "Anyone".`);
-                    return;
-                }
-                if (result.status === 'success') {
-                    onLogin(result.user);
-                } else {
-                    setError(result.message || 'Username atau Password Salah!');
+                } catch(e) {
+                    setLoading(false);
+                    if (e.message === 'script_error') {
+                        setError('❌ GAS belum di-deploy dengan benar. Buka tab baru, akses URL ini:\n' + API_URL + '\nJika minta login Google → deployment harus diubah ke "Anyone".');
+                    } else if (e.message === 'timeout') {
+                        setError('⏱ Koneksi timeout. Cek apakah GAS URL masih aktif.');
+                    } else {
+                        setError('Gagal: ' + e.message);
+                    }
                 }
             };
 
@@ -494,7 +466,7 @@
                         </div>
 
                         <h2 className="login-left" style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-                            Bring management<br />of human<br />resources in your<br />company to the<br />next level
+                            production report<br />of versi1<br />resources in your<br />company to the<br />next level
                         </h2>
                     </div>
 
@@ -556,14 +528,33 @@
                             </p>
 
                             <button className="btn-signin" onClick={handleLogin} disabled={loading}>
-                                {loading ? 'Signing in...' : 'Sign In'}
+                                {loading
+                                    ? <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{animation:'spin 1s linear infinite'}}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                                        Connecting...
+                                      </span>
+                                    : 'Sign In'}
                             </button>
 
-                            <button className="btn-forgot" onClick={() => alert('Hubungi Admin untuk reset password.')}>
-                                Forgot Password
+                            <button className="btn-forgot" onClick={() => window.open(API_URL, '_blank')}>
+                                🔗 Test Koneksi GAS
                             </button>
 
-                            {error && <div className="login-error">{error}</div>}
+                            {error && (
+                                <div className="login-error" style={{textAlign:'left', whiteSpace:'pre-wrap', wordBreak:'break-all'}}>
+                                    {error}
+                                    {error.includes('GAS belum') && (
+                                        <div style={{marginTop:'10px', background:'rgba(0,0,0,0.2)', borderRadius:'4px', padding:'8px', fontSize:'11px', lineHeight:'1.6'}}>
+                                            <b>Cara fix di Google Apps Script:</b><br/>
+                                            1. Klik <b>Deploy → Manage deployments</b><br/>
+                                            2. Klik ✏️ Edit<br/>
+                                            3. <b>Who has access</b> → pilih <b>"Anyone"</b><br/>
+                                            4. Version → <b>"New version"</b><br/>
+                                            5. Klik <b>Deploy</b>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div style={{ marginTop: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
