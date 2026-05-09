@@ -29,7 +29,6 @@
         
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; }
         
-        /* LOGIN PAGE STYLES */
         .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: flex-end; }
         .login-bg::before { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1.5'%3E%3Ccircle cx='60' cy='60' r='50'/%3E%3Ccircle cx='60' cy='60' r='35'/%3E%3Ccircle cx='60' cy='60' r='20'/%3E%3Cpath d='M10 60 Q35 30 60 60 Q85 90 110 60'/%3E%3Cpath d='M60 10 Q90 35 60 60 Q30 85 60 110'/%3E%3C/g%3E%3C/svg%3E"); background-size: 120px 120px; }
         .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
@@ -42,7 +41,6 @@
         .btn-signin { width: 100%; background: #27ae60; color: white; font-weight: 800; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 6px; padding: 14px; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 6px; }
         .btn-signin:hover { background: #1e8449; }
         .btn-signin:disabled { background: #7f8c8d; cursor: not-allowed; }
-        .btn-forgot { width: 100%; background: #e67e22; color: white; font-weight: 700; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; border: none; border-radius: 6px; padding: 13px; cursor: pointer; margin-top: 10px; }
         .login-error { background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.6); color: #fce4e4; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-top: 12px; text-align: center; }
         .login-divider { width: 200px; height: 2px; background: rgba(255,255,255,0.4); margin: 16px auto; }
 
@@ -60,7 +58,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // PASTIKAN API_URL INI SESUAI DENGAN DEPLOYMENT BARU ANDA JIKA ADA PERUBAHAN
+        // PASTIKAN API_URL INI SESUAI DENGAN DEPLOYMENT BARU ANDA
         const API_URL = 'https://script.google.com/macros/s/AKfycbxtYvl-g9l0GhIIEYkKFGnI31MFExXj92YRayum1nePexSSeIbyOalk6a1Pcq8vdmx4/exec';
 
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
@@ -78,7 +76,7 @@
             const [loading, setLoading] = useState(false);
             const [masterSpecs, setMasterSpecs] = useState({});
             
-            // State untuk Line Member Tabel Bawah (10 Kolom)
+            // State untuk Line Member Tabel Bawah
             const [displayMembers, setDisplayMembers] = useState(Array(10).fill(''));
             
             const [isFormOpen, setIsFormOpen] = useState(false);
@@ -91,7 +89,7 @@
                 line: user.name, 
                 leader: '', 
                 ot: '', 
-                members: Array(10).fill('') // Array untuk 10 Input Member
+                members: Array(10).fill('') 
             });
             const [formProses, setFormProses] = useState({
                 ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
@@ -104,6 +102,7 @@
                 hagumi_sep: '', winder: '', cleaning: '', machine_prob: '', other: ''
             });
 
+            // Tiap ganti tanggal, loadData otomatis memeriksa eksistensi header di database
             useEffect(() => { loadData(); }, [formHeader.tanggal]);
 
             useEffect(() => {
@@ -128,15 +127,20 @@
                         setRows(result.data);
                         if(result.specs) setMasterSpecs(result.specs);
                         
-                        // Parse Data Member dari backend untuk tabel bawah
+                        let newMembers = Array(10).fill('');
                         if(result.members) {
                             const arr = result.members.split(',').map(m => m.trim());
-                            const newDisplay = Array(10).fill('');
-                            arr.forEach((val, idx) => { if(idx < 10) newDisplay[idx] = val; });
-                            setDisplayMembers(newDisplay);
-                        } else {
-                            setDisplayMembers(Array(10).fill(''));
+                            arr.forEach((val, idx) => { if(idx < 10) newMembers[idx] = val; });
                         }
+                        setDisplayMembers(newMembers);
+
+                        // PERUBAHAN PENTING: Jika data Header hari ini sudah ada, otomatis isikan ke form!
+                        setFormHeader(prev => ({
+                            ...prev,
+                            leader: result.headerInfo && result.headerInfo.leader ? result.headerInfo.leader : '',
+                            ot: result.headerInfo && result.headerInfo.ot ? result.headerInfo.ot : '',
+                            members: newMembers
+                        }));
                     }
                 } catch (e) { console.error("Load failed", e); }
                 setLoading(false);
@@ -181,7 +185,6 @@
 
             const submitData = async () => {
                 setLoading(true);
-                // Gabungkan array member menjadi 1 string dipisah koma (Abaikan yang kosong)
                 const combinedMembers = formHeader.members
                     .filter(m => m.trim() !== '')
                     .join(', ');
@@ -209,13 +212,22 @@
                 setLoading(false);
             };
 
+            const openForm = () => {
+                // Form Header sudah diisi otomatis oleh loadData(). 
+                // Kita bersihkan Form Proses dan Form Downtime agar form kosong untuk input baru.
+                setFormProses({ ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: '' });
+                setFormDowntime({ tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', hagumi_sep: '', winder: '', cleaning: '', machine_prob: '', other: '' });
+                setIsFormOpen(true);
+                setActiveTab('HEADER');
+            };
+
             const inputStyle = "w-full border border-gray-300 p-2 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none";
             const labelStyle = "block text-xs font-bold text-gray-700 mb-1 mt-3 uppercase";
 
             return (
                 <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen relative">
                     
-                    {/* Header Controls (No Print) */}
+                    {/* Header Controls */}
                     <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
                         <div className="flex flex-wrap gap-4 items-end">
                             <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
@@ -228,7 +240,8 @@
                         </div>
                         
                         <div className="flex flex-wrap gap-2">
-                            <button onClick={() => { setIsFormOpen(true); setActiveTab('HEADER'); }} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
+                            {/* Tombol dimodifikasi menggunakan openForm() */}
+                            <button onClick={openForm} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
                             <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
                         </div>
                     </div>
@@ -414,7 +427,7 @@
                         </table>
                     </div>
 
-                    {/* Footer Area - LINE MEMBER DI-MAP DARI 10 DATA */}
+                    {/* Footer Area - LINE MEMBER */}
                     <div className="mt-4 border border-black text-[10px] flex flex-wrap" style={{ pageBreakInside: 'avoid' }}>
                         <div className="w-1/4 border-r border-black p-2">
                             <div className="font-bold mb-1 uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
