@@ -1,0 +1,84 @@
+const App = () => {
+    // State untuk mengatur menu yang aktif
+    const [activeMenu, setActiveMenu] = React.useState('menu1');
+    // State untuk Sidebar (Minimize/Maximize)
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+
+    const menus = [
+        { id: 'menu1', title: 'Production Report', icon: '📝' },
+        { id: 'menu2', title: 'Dashboard Monitor', icon: '📊' },
+        { id: 'menu3', title: 'Upload Planning', icon: '📤' },
+        { id: 'menu4', title: 'OEE Analysis', icon: '⚙️' },
+        { id: 'menu5', title: 'Print NG Report', icon: '🖨️' },
+    ];
+
+    // Fungsi Render Konten Berdasarkan Menu Aktif
+    const renderContent = () => {
+        switch(activeMenu) {
+            case 'menu1':
+                return <div className="p-6 bg-white rounded-lg shadow"><h2>Antarmuka Menu 1: Production Report (Segera Hadir)</h2></div>;
+            case 'menu2':
+                return <div className="p-6 bg-slate-900 text-white rounded-lg shadow"><h2>Antarmuka Menu 2: Dashboard Dark Mode (Segera Hadir)</h2></div>;
+            default:
+                return <div className="p-6 bg-white rounded-lg shadow"><h2>Work in Progress...</h2></div>;
+        }
+    };
+
+    return (
+        <div className="flex h-screen bg-gray-100 overflow-hidden">
+            {/* SIDEBAR */}
+            <div className={`bg-blue-900 text-white transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                {/* Header Sidebar */}
+                <div className="h-16 flex items-center justify-between px-4 border-b border-blue-800">
+                    {isSidebarOpen && <span className="font-bold text-lg truncate">HSSI System</span>}
+                    <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-blue-800 rounded">
+                        {isSidebarOpen ? '◀' : '▶'}
+                    </button>
+                </div>
+
+                {/* Navigasi Menu */}
+                <div className="flex-1 overflow-y-auto py-4">
+                    <ul className="space-y-2 px-2">
+                        {menus.map((menu) => (
+                            <li key={menu.id}>
+                                <button 
+                                    onClick={() => setActiveMenu(menu.id)}
+                                    className={`w-full flex items-center p-3 rounded-lg transition-colors ${activeMenu === menu.id ? 'bg-blue-700' : 'hover:bg-blue-800'}`}
+                                    title={!isSidebarOpen ? menu.title : ""}
+                                >
+                                    <span className="text-xl">{menu.icon}</span>
+                                    {isSidebarOpen && <span className="ml-3 text-sm font-medium whitespace-nowrap">{menu.title}</span>}
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+
+            {/* MAIN CONTENT AREA */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Topbar / Header */}
+                <header className="h-16 bg-white shadow flex items-center justify-between px-6 z-10">
+                    <h1 className="text-xl font-bold text-gray-800">
+                        {menus.find(m => m.id === activeMenu)?.title}
+                    </h1>
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 font-bold">
+                            U
+                        </div>
+                        <span className="text-sm font-medium text-gray-600">User Active</span>
+                    </div>
+                </header>
+
+                {/* Dynamic Page Content */}
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                    {renderContent()}
+                </main>
+            </div>
+        </div>
+    );
+};
+
+// Render React ke DOM
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
