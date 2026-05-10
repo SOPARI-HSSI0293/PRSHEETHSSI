@@ -15,7 +15,6 @@
         body { font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Modifikasi Table Layout Standar Excel */
         .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
         .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
@@ -30,7 +29,6 @@
         
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; }
         
-        /* Login Styles */
         .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; display: flex; align-items: center; justify-content: flex-end; }
         .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
         .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; z-index: 10; }
@@ -61,6 +59,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // PASTIKAN API_URL INI SESUAI DENGAN DEPLOYMENT BARU ANDA
         const API_URL = 'https://script.google.com/macros/s/AKfycbxtYvl-g9l0GhIIEYkKFGnI31MFExXj92YRayum1nePexSSeIbyOalk6a1Pcq8vdmx4/exec';
 
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
@@ -69,7 +68,12 @@
         const IconAnalyze = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><circle cx="12" cy="12" r="3"/></svg>;
         const IconPrint = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
         const IconMenu = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="18" y2="18"/></svg>;
+        const IconChevronDown = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
+        const IconChevronUp = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 
+        // =====================================================================
+        // KOMPONEN: MODUL PRODUCTION REPORT 
+        // =====================================================================
         const ProductionReportModule = ({ user }) => {
             const [rows, setRows] = useState([]);
             const [loading, setLoading] = useState(false);
@@ -117,14 +121,12 @@
                     if (result.success) {
                         setRows(result.data);
                         if(result.specs) setMasterSpecs(result.specs);
-                        
                         let newMembers = Array(10).fill('');
                         if(result.members) {
-                            const arr = result.members.split(',');
-                            arr.forEach((val, idx) => { if(idx < 10) newMembers[idx] = val.trim(); });
+                            const arr = result.members.split(',').map(m => m.trim());
+                            arr.forEach((val, idx) => { if(idx < 10) newMembers[idx] = val; });
                         }
                         setDisplayMembers(newMembers);
-
                         setFormHeader(prev => ({
                             ...prev, leader: result.headerInfo?.leader || '', ot: result.headerInfo?.ot || '', members: newMembers
                         }));
@@ -168,17 +170,6 @@
                 } catch(e) { alert("Error parsing QR: " + e.message); }
             };
 
-            // SOLUSI PROBLEM 1: Sinkronisasi nilai Member agar bisa diketik dengan baik
-            const handleMemberChange = (index, value) => {
-                const newMembers = [...formHeader.members];
-                newMembers[index] = value;
-                
-                // Update ke formHeader state
-                setFormHeader(prev => ({ ...prev, members: newMembers }));
-                // Update ke displayMembers untuk tampilan cetak
-                setDisplayMembers(newMembers);
-            };
-
             const setTimeNow = (field) => {
                 const now = new Date();
                 const hours = String(now.getHours()).padStart(2, '0');
@@ -187,20 +178,21 @@
                 setFormProses(prev => ({ ...prev, [field]: timeString }));
             };
 
-            // SOLUSI PROBLEM 2: Otomatisasi perhitungan Qty FG + Qty NG = Qty Total
+            // FUNGSI BARU: Kalkulasi Otomatis Qty FG + Qty NG = Qty Total
             const handleQtyChange = (field, value) => {
                 setFormProses(prev => {
-                    const newState = { ...prev, [field]: value };
-                    
-                    if (newState.qty_fg === '' && newState.qty_ng === '') {
-                        newState.qty_total = '';
-                    } else {
-                        const fg = parseFloat(newState.qty_fg) || 0;
-                        const ng = parseFloat(newState.qty_ng) || 0;
-                        newState.qty_total = fg + ng;
-                    }
-                    return newState;
+                    const updated = { ...prev, [field]: value };
+                    const fg = parseFloat(updated.qty_fg) || 0;
+                    const ng = parseFloat(updated.qty_ng) || 0;
+                    updated.qty_total = fg + ng; // Otomatis menjumlahkan
+                    return updated;
                 });
+            };
+
+            const handleMemberChange = (index, value) => {
+                const newMembers = [...formHeader.members];
+                newMembers[index] = value;
+                setFormHeader({ ...formHeader, members: newMembers });
             };
 
             const handleEdit = (row) => {
@@ -233,9 +225,8 @@
 
             const submitData = async () => {
                 setLoading(true);
-                const combinedMembers = formHeader.members.join(',');
+                const combinedMembers = formHeader.members.filter(m => m.trim() !== '').join(', ');
                 const payload = { action: 'saveData', header: { ...formHeader, member: combinedMembers }, proses: formProses, downtime: formDowntime };
-                
                 try {
                     const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
                     const result = await res.json();
@@ -266,7 +257,7 @@
             return (
                 <div className="bg-white rounded shadow-lg border border-gray-300 flex flex-col p-2 print-flatten">
                     
-                    {/* Header Controls */}
+                    {/* Header Controls (Navigasi Sejajar) - Disembunyikan saat print */}
                     <div className="bg-white p-2 border-b-2 border-gray-800 flex flex-wrap items-center justify-between no-print mb-2 gap-2">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
@@ -313,13 +304,15 @@
                                                 <div><label className={labelStyle}>OT (Jam)</label><input type="text" className={inputStyle} value={formHeader.ot} onChange={e => setFormHeader({...formHeader, ot: e.target.value})} /></div>
                                             </div>
                                             <div className="mt-4 border-t pt-4">
-                                                <label className="block text-xs font-black text-blue-700 uppercase mb-2">Input Member (10 Orang)</label>
+                                                {/* Penambahan teks petunjuk agar user tahu ini bisa diedit dan akan tersimpan */}
+                                                <label className="block text-xs font-black text-blue-700 uppercase mb-2">
+                                                    Input Member (10 Orang) <span className="text-[10px] text-gray-500 font-normal normal-case italic ml-2">(Edit nama di sini & klik Simpan)</span>
+                                                </label>
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    {/* PROBLEM 1: onChange memanggil handleMemberChange dengan benar */}
                                                     {formHeader.members.map((m, idx) => (
                                                         <div key={idx} className="flex items-center gap-2">
                                                             <span className="text-[10px] font-bold w-4">{idx + 1}.</span>
-                                                            <input type="text" className={inputStyle} placeholder={`Nama Member ${idx + 1}`} value={m || ''} onChange={e => handleMemberChange(idx, e.target.value)} />
+                                                            <input type="text" className={inputStyle} placeholder={`Nama Member ${idx + 1}`} value={m} onChange={e => handleMemberChange(idx, e.target.value)} />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -328,208 +321,240 @@
                                     )}
 
                                     {activeTab === 'INPUT DATA' && (
-                                        <div className="space-y-4">
-                                            <div className="bg-white border rounded-lg shadow-sm">
-                                                <div className="p-3 bg-blue-50 border-b flex justify-between items-center cursor-pointer" onClick={() => setIsProsesOpen(!isProsesOpen)}>
-                                                    <h3 className="font-bold text-blue-800 uppercase text-sm">1. Detail Proses Produksi</h3>
-                                                    <span className="text-blue-800 font-bold">{isProsesOpen ? '▲' : '▼'}</span>
-                                                </div>
-                                                {isProsesOpen && (
-                                                    <div className="p-4 grid grid-cols-4 gap-4">
-                                                        <div className="col-span-4 flex gap-2">
-                                                            <button onClick={() => setShowScanner(!showScanner)} className="bg-gray-800 text-white px-3 py-1 rounded text-xs flex items-center gap-2 hover:bg-black uppercase">
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> SCAN QR MATERIAL
-                                                            </button>
-                                                        </div>
-                                                        {showScanner && (
-                                                            <div className="col-span-4 bg-gray-100 p-2 rounded flex justify-center border border-gray-300">
-                                                                <div id="qr-reader" style={{ width: '300px' }}></div>
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {/* FORM INPUT DETAIL PROSES */}
-                                                        <div><label className={labelStyle}>CC No</label><input type="text" className={inputStyle} value={formProses.ccno} onChange={e => setFormProses({...formProses, ccno: e.target.value})} /></div>
+                                        <div>
+                                            <div className="flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm mb-2" onClick={() => setIsProsesOpen(!isProsesOpen)}>
+                                                <h3 className="font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> Data Proses Produksi</h3>
+                                                <span className="text-blue-800">{isProsesOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
+                                            </div>
+
+                                            {isProsesOpen && (
+                                                <div className="mb-6 px-2 animate-fade-in">
+                                                    <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center">
+                                                        <div className="text-sm font-bold text-yellow-800">Scan QR untuk Auto-Fill Material Data</div>
+                                                        <button type="button" onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner' : 'Buka Scanner'}</button>
+                                                    </div>
+                                                    {showScanner && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2 rounded"></div>}
+
+                                                    <div className="grid grid-cols-3 gap-4">
+                                                        <div><label className={labelStyle}>CC No (QR)</label><input type="text" className={inputStyle} value={formProses.ccno} onChange={e => setFormProses({...formProses, ccno: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Spec (QR)</label><input type="text" className={inputStyle} value={formProses.spec} onChange={e => setFormProses({...formProses, spec: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Raw Material Size (QR)</label><input type="text" className={inputStyle} value={formProses.raw_mat_size} onChange={e => setFormProses({...formProses, raw_mat_size: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Weight Raw (QR)</label><input type="text" className={inputStyle} value={formProses.weight_raw} onChange={e => setFormProses({...formProses, weight_raw: e.target.value})} /></div>
-                                                        
                                                         <div><label className={labelStyle}>Customer</label><input type="text" className={inputStyle} value={formProses.customer} onChange={e => setFormProses({...formProses, customer: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Actual Width Raw</label><input type="text" className={inputStyle} value={formProses.actual_width} onChange={e => setFormProses({...formProses, actual_width: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Weight Coil Back</label><input type="text" className={inputStyle} value={formProses.weight_cb} onChange={e => setFormProses({...formProses, weight_cb: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Product Size</label><input type="text" className={inputStyle} value={formProses.product_size} onChange={e => setFormProses({...formProses, product_size: e.target.value})} /></div>
-
-                                                        {/* PROBLEM 2: Perubahan pada Qty FG, Qty NG, dan Qty Total agar otomatis */}
+                                                        
+                                                        {/* MODIFIKASI QTY: Memanggil handleQtyChange agar otomatis berhitung */}
                                                         <div><label className={labelStyle}>Qty FG</label><input type="number" className={inputStyle} value={formProses.qty_fg} onChange={e => handleQtyChange('qty_fg', e.target.value)} /></div>
                                                         <div><label className={labelStyle}>Qty NG</label><input type="number" className={inputStyle} value={formProses.qty_ng} onChange={e => handleQtyChange('qty_ng', e.target.value)} /></div>
-                                                        <div>
-                                                            <label className={labelStyle}>Qty Total</label>
-                                                            <input type="number" className={`${inputStyle} bg-gray-200 cursor-not-allowed`} value={formProses.qty_total} readOnly tabIndex="-1" />
-                                                        </div>
+                                                        
+                                                        {/* QTY TOTAL: Otomatis tampil, tidak bisa diklik (Read-Only) */}
+                                                        <div><label className={labelStyle}>Qty Total <span className="text-[10px] lowercase text-blue-500">(Auto)</span></label><input type="number" readOnly className={`${inputStyle} bg-gray-200 font-bold cursor-not-allowed`} value={formProses.qty_total} placeholder="Auto (FG+NG)" /></div>
                                                         
                                                         <div><label className={labelStyle}>Total Length</label><input type="text" className={inputStyle} value={formProses.total_length} onChange={e => setFormProses({...formProses, total_length: e.target.value})} /></div>
                                                         
-                                                        {['coil_set', 'start_proc', 'end_proc', 'prod_keluar'].map(f => (
-                                                            <div key={f}>
-                                                                <label className={labelStyle}>{f.replace('_', ' ')} <button className="text-[10px] bg-gray-200 px-1 rounded ml-1 text-blue-600 hover:bg-gray-300" onClick={() => setTimeNow(f)}>NOW</button></label>
-                                                                <input type="time" className={inputStyle} value={formProses[f]} onChange={e => setFormProses({...formProses, [f]: e.target.value})} />
+                                                        <div>
+                                                            <label className={labelStyle}>Coil Set Lifter</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.coil_set} onChange={e => setFormProses({...formProses, coil_set: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('coil_set')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
                                                             </div>
-                                                        ))}
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>Start Proses</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.start_proc} onChange={e => setFormProses({...formProses, start_proc: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('start_proc')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>End Proses</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.end_proc} onChange={e => setFormProses({...formProses, end_proc: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('end_proc')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>Produk Keluar</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.prod_keluar} onChange={e => setFormProses({...formProses, prod_keluar: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('prod_keluar')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
 
                                                         <div><label className={labelStyle}>Line Speed</label><input type="text" className={inputStyle} value={formProses.line_speed} onChange={e => setFormProses({...formProses, line_speed: e.target.value})} /></div>
-                                                        <div className="col-span-3"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
+                                                        <div className="col-span-2"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
                                                     </div>
-                                                )}
+                                                </div>
+                                            )}
+
+                                            <div className="relative my-6"><div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div></div>
+
+                                            {/* ACCORDION BAGIAN DOWNTIME */}
+                                            <div className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2" onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}>
+                                                <h3 className="font-bold text-red-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Data Downtime (Loss Time)</h3>
+                                                <span className="text-red-800">{isDowntimeOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
                                             </div>
 
-                                            <div className="bg-white border rounded-lg shadow-sm">
-                                                <div className="p-3 bg-red-50 border-b flex justify-between items-center cursor-pointer" onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}>
-                                                    <h3 className="font-bold text-red-800 uppercase text-sm">2. Data Downtime (Menit)</h3>
-                                                    <span className="text-red-800 font-bold">{isDowntimeOpen ? '▲' : '▼'}</span>
-                                                </div>
-                                                {isDowntimeOpen && (
-                                                    <div className="p-4 grid grid-cols-3 gap-4 bg-gray-50">
+                                            {isDowntimeOpen && (
+                                                <div className="mb-4 px-2 animate-fade-in">
+                                                    <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 border rounded-lg border-gray-200">
                                                         {['tbm', 'packing_cb', 'waiting_mc', 'waiting_hagumi', 'waiting_crane', 'hagumi_sep', 'winder', 'cleaning', 'machine_prob', 'other'].map(dt => (
                                                             <div key={dt}>
-                                                                <label className={labelStyle}>{dt.replace(/_/g, ' ')}</label>
+                                                                <label className={labelStyle}>{dt.replace(/_/g, ' ')} (Menit)</label>
                                                                 <input type="number" className={inputStyle} value={formDowntime[dt]} onChange={e => setFormDowntime({...formDowntime, [dt]: e.target.value})} />
                                                             </div>
                                                         ))}
                                                     </div>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-
+                                
                                 <div className="bg-gray-100 p-4 border-t flex justify-end gap-3 rounded-b-lg">
-                                    <button onClick={() => setIsFormOpen(false)} className="px-5 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50 uppercase">Batal</button>
-                                    <button onClick={submitData} disabled={loading} className={`px-5 py-2 text-sm font-bold text-white rounded uppercase ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                                        {loading ? 'Menyimpan...' : 'Simpan Data'}
+                                    <button onClick={() => setIsFormOpen(false)} className="px-6 py-2 rounded font-bold text-gray-600 bg-gray-200 hover:bg-gray-300">Batal / Tutup</button>
+                                    <button onClick={submitData} disabled={loading} className="px-6 py-2 rounded font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg">
+                                        {loading ? 'Menyimpan...' : (formProses.process_id ? 'Update Data' : 'Simpan Data')}
                                     </button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* AREA TABEL UTAMA */}
-                    <div className="flex-1 overflow-auto print-table-container relative border border-gray-300 bg-white">
-                        {loading && (
-                            <div className="absolute inset-0 bg-white bg-opacity-70 flex justify-center items-center z-50 no-print">
-                                <div className="loader"></div>
-                            </div>
-                        )}
-                        <table className="excel-table">
+                    {/* Print Header Tampil Eksklusif Saat di Print */}
+                    <div className="hidden print:flex w-full justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
+                        <div className="w-1/3 text-sm font-bold">Tanggal : <span className="border-b border-black min-w-[120px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
+                        <div className="w-1/3 text-center"><h1 className="text-2xl font-black tracking-widest uppercase m-0 p-0 line-height-1">PRODUCTION REPORT</h1></div>
+                        <div className="w-1/3 flex justify-end gap-2 font-bold text-xs">
+                            <div className="border border-black p-1 min-w-[60px] text-center"><div className="text-[9px]">LINE</div><div>{formHeader.line}</div></div>
+                            <div className="border border-black p-1 min-w-[60px] text-center flex items-center justify-center"><span className="mr-1 text-[9px]">OT</span> <span className="border-b border-black w-8"></span></div>
+                        </div>
+                    </div>
+
+                    {/* Main Excel Table */}
+                    <div className="overflow-x-auto overflow-y-auto print-table-container hide-scrollbar" style={{ maxHeight: '72vh' }}>
+                        <table className="excel-table w-full">
                             <thead>
                                 <tr>
-                                    <th rowSpan="2" className="sticky-col no-print" style={colStyle.aksi}>Aksi</th>
-                                    <th rowSpan="2" className="sticky-col" style={colStyle.no}>No</th>
-                                    <th rowSpan="2" className="sticky-col" style={colStyle.ccno}>CC No</th>
+                                    <th rowSpan="2" className="sticky-col no-print bg-white" style={colStyle.aksi}>Aksi</th>
+                                    <th rowSpan="2" style={colStyle.no}>NO</th>
+                                    <th rowSpan="2" style={colStyle.ccno}>CC NO</th>
                                     <th rowSpan="2" style={colStyle.cust}>Customer</th>
                                     <th rowSpan="2" style={colStyle.spec}>Spec</th>
-                                    <th colSpan="3" className="bg-blue-100">Raw Material</th>
-                                    <th rowSpan="2" style={colStyle.prodSize}>Product Size<br/>(T x W)</th>
-                                    <th colSpan="3" className="bg-green-100">Quantity (Coil)</th>
-                                    <th rowSpan="2" style={colStyle.length}>Total Length (m)</th>
-                                    <th colSpan="4" className="bg-yellow-100">Time / Waktu</th>
-                                    <th colSpan="10" className="bg-red-100">Down Time (Menit)</th>
-                                    <th rowSpan="2" style={colStyle.lineSpeed}>Line Speed (m/m)</th>
+                                    <th rowSpan="2" style={colStyle.size}>MC/Semi Size</th>
+                                    <th rowSpan="2" style={colStyle.actual}>Actual Width</th>
+                                    <th rowSpan="2" style={colStyle.weight}>Weight</th>
+                                    <th rowSpan="2" style={colStyle.prodSize}>Product Size</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty FG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty NG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty Total</th>
+                                    <th rowSpan="2" style={colStyle.length}>Total Length</th>
+                                    <th rowSpan="2" style={colStyle.time}>Coil Set</th>
+                                    <th rowSpan="2" style={colStyle.time}>Start</th>
+                                    <th rowSpan="2" style={colStyle.time}>End</th>
+                                    <th rowSpan="2" style={colStyle.time}>Produk Keluar</th>
+                                    <th colSpan="10" className="bg-blue-100 uppercase" style={{fontSize: '11px'}}>Down Time (Minutes)</th>
+                                    <th rowSpan="2" style={colStyle.lineSpeed}>Line Speed</th>
                                     <th rowSpan="2" style={colStyle.remark}>Remark</th>
                                 </tr>
                                 <tr>
-                                    <th style={colStyle.size}>Size (T x W)</th>
-                                    <th style={colStyle.actual}>Actual W</th>
-                                    <th style={colStyle.weight}>Weight</th>
-                                    <th style={colStyle.qty}>FG</th>
-                                    <th style={colStyle.qty}>NG</th>
-                                    <th style={colStyle.qty}>Total</th>
-                                    <th style={colStyle.time}>Coil Set</th>
-                                    <th style={colStyle.time}>Start Proc</th>
-                                    <th style={colStyle.time}>End Proc</th>
-                                    <th style={colStyle.time}>Prod Keluar</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>TBM</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>Packing CB</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Packing</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Wait MC</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Wait Hagumi</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Wait Crane</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>Hagumi/Sep</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>Winder T/E</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Hagumi/ Sep</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Winder</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Cleaning</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>MC Prob</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Machine Prob</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Other</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {rows.length === 0 ? (
-                                    <tr><td colSpan="30" className="text-center py-4 italic text-gray-500">Tidak ada data untuk tanggal ini.</td></tr>
-                                ) : (
-                                    rows.map((r, i) => (
-                                        <tr key={i}>
-                                            <td className="sticky-col no-print bg-white" style={colStyle.aksi}>
-                                                <div className="flex justify-center gap-2">
-                                                    <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 font-bold" title="Edit Data">✎</button>
-                                                    <button onClick={() => handleDelete(r.Process_ID || r['Process_ID'])} className="text-red-600 hover:text-red-800 font-bold" title="Hapus Data">🗑</button>
-                                                </div>
-                                            </td>
-                                            <td className="sticky-col bg-white" style={colStyle.no}>{i+1}</td>
-                                            <td className="sticky-col bg-white font-bold" style={colStyle.ccno}>{r.ccno || r['CC No'] || ''}</td>
-                                            <td style={colStyle.cust}>{r.customer || r['Customer'] || ''}</td>
-                                            <td style={colStyle.spec}>{r.spec || r['Spec'] || ''}</td>
-                                            <td style={colStyle.size}>{r.mc_semi_prod_size || r['Raw Material Size'] || ''}</td>
-                                            <td style={colStyle.actual}>{r.actual_width_mc || r['Actual Width Raw Material'] || ''}</td>
-                                            <td style={colStyle.weight}>{r.weight || r['Weight Raw Material'] || ''}</td>
-                                            <td style={colStyle.prodSize}>{r.product_size || r['Product Size'] || ''}</td>
-                                            <td style={colStyle.qty}>{r.qty_fg || r['Qty FG'] || ''}</td>
-                                            <td style={colStyle.qty}>{r.qty_ng || r['Qty NG'] || ''}</td>
-                                            <td className="font-bold bg-green-50" style={colStyle.qty}>{r.qty_total || r['Total'] || ''}</td>
-                                            <td style={colStyle.length}>{r.total_length || r['Total Length'] || ''}</td>
-                                            <td style={colStyle.time}>{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
-                                            <td style={colStyle.time}>{formatTime(r.start_process || r['Start Proses'])}</td>
-                                            <td style={colStyle.time}>{formatTime(r.end_process || r['End Proses'])}</td>
-                                            <td style={colStyle.time}>{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
-                                            <td>{r.dt_tbm || r['TBM'] || ''}</td>
-                                            <td>{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
-                                            <td>{r.dt_waiting_mc || r['Waiting MC'] || ''}</td>
-                                            <td>{r.dt_waiting_hagumi || r['Waiting Hagumi'] || ''}</td>
-                                            <td>{r.dt_waiting_crane || r['Waiting Crane'] || ''}</td>
-                                            <td>{r.dt_hagumi_separator || r['Hagumi/Separator'] || ''}</td>
-                                            <td>{r.dt_winder_top_end || r['Winder Top/End'] || ''}</td>
-                                            <td>{r.dt_cleaning_mesin || r['Cleaning Mesin'] || ''}</td>
-                                            <td>{r.dt_machine_problem || r['Machine Problem'] || ''}</td>
-                                            <td>{r.dt_other || r['Other'] || ''}</td>
-                                            <td style={colStyle.lineSpeed}>{r.line_speed || r['Line Speed'] || ''}</td>
-                                            <td className="text-left" style={colStyle.remark}>{r.remark || r['Remark'] || ''}</td>
-                                        </tr>
-                                    ))
-                                )}
+                                    <tr><td colSpan="28" className="p-4 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
+                                ) : rows.map((r, i) => (
+                                    <tr key={i}>
+                                        <td className="sticky-col no-print bg-white">
+                                            <div className="flex gap-2 justify-center">
+                                                <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 font-bold" title="Edit Data">✎</button>
+                                                <button onClick={() => handleDelete(r.Process_ID || r['Process_ID'])} className="text-red-600 hover:text-red-800 font-bold" title="Hapus Data">🗑</button>
+                                            </div>
+                                        </td>
+                                        <td>{i+1}</td>
+                                        <td className="font-bold">{r.ccno || r['CC No'] || ''}</td>
+                                        <td>{r.customer || r['Customer'] || ''}</td>
+                                        <td>{r.spec || r['Spec'] || ''}</td>
+                                        <td>{r.mc_semi_prod_size || r['Raw Material Size'] || ''}</td>
+                                        <td>{r.actual_width_mc || r['Actual Width Raw Material'] || ''}</td>
+                                        <td className="font-bold">{r.weight || r['Weight Raw Material'] || ''}</td>
+                                        <td>{r.product_size || r['Product Size'] || ''}</td>
+                                        <td>{r.qty_fg || r['Qty FG'] || ''}</td>
+                                        <td>{r.qty_ng || r['Qty NG'] || ''}</td>
+                                        <td className="font-bold bg-gray-100">{r.qty_total || r['Total'] || ''}</td>
+                                        <td>{r.total_length || r['Total Length'] || ''}</td>
+                                        
+                                        <td className="text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
+                                        <td className="text-green-900 bg-green-50/50">{formatTime(r.start_process || r['Start Proses'])}</td>
+                                        <td className="text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
+                                        <td className="text-gray-900 bg-gray-50/50">{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
+
+                                        <td className="bg-blue-50/30">{r.dt_tbm || r['TBM'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_mc || r['Waiting MC'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_hagumi || r['Waiting Hagumi'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_crane || r['Waiting Crane'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_hagumi_separator || r['Hagumi/Separator'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_winder_top_end || r['Winder Top/End'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_cleaning_mesin || r['Cleaning Mesin'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_machine_problem || r['Machine Problem'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_other || r['Other'] || ''}</td>
+                                        <td>{r.line_speed || r['Line Speed'] || ''}</td>
+                                        <td className="text-left" style={{textAlign: 'left'}}>{r.remark || r['Remark'] || ''}</td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
 
-                    {/* Footer Print Layout */}
-                    <div className="mt-2 flex gap-2 w-full text-[10px] page-break-inside-avoid">
-                        <div className="flex-none w-[35%] flex flex-col gap-1 border border-black p-1">
-                            <div className="font-bold uppercase border-b border-black pb-1 mb-1">Total Produksi</div>
-                            <div className="flex justify-between"><span>Total Coil:</span><span className="font-bold">{totals.coil} Coil</span></div>
-                            <div className="flex justify-between"><span>Total Berat:</span><span className="font-bold">{totals.berat} Kg</span></div>
-                            
-                            <div className="font-bold uppercase border-b border-black pb-1 mt-2 mb-1">Anggota Shift</div>
-                            <div className="grid grid-cols-2 gap-x-2 gap-y-0 text-[9px]">
-                                {displayMembers.map((m, i) => (
-                                    <div key={i} className="flex"><span className="w-4">{i+1}.</span><span className="border-b border-dotted border-gray-400 flex-1">{m || '\u00A0'}</span></div>
-                                ))}
-                            </div>
+                    {/* Footer Area - LINE MEMBER */}
+                    <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
+                        <div className="w-1/4 border-r border-black p-1">
+                            <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
+                            <table className="w-full border-collapse border border-black text-center">
+                                <tbody>
+                                    {[0, 1, 2, 3, 4].map(i => (
+                                        <tr key={i}>
+                                            <td className="border border-black w-5 bg-gray-50">{i + 1}</td>
+                                            <td className="border border-black h-4 text-left px-1">{displayMembers[i]}</td>
+                                            <td className="border border-black w-5 bg-gray-50">{i + 6}</td>
+                                            <td className="border border-black h-4 text-left px-1">{displayMembers[i + 5]}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                        <div className="flex-1 border border-black p-1">
-                            <div className="font-bold uppercase border-b border-black pb-1 mb-1 text-center">Keterangan Waktu</div>
-                            <p className="mb-0 leading-tight">• Coil Set: Saat material mulai di angkat oleh crane / Lifter.</p>
-                            <p className="mb-0 leading-tight">• Start Process: Saat mesin mulai ditarik recoiler / Running Otomatis.</p>
+                        <div className="w-1/4 border-r border-black p-1 flex flex-col justify-end">
+                            <div className="text-right font-bold uppercase mb-1">Total Proses</div>
+                            <table className="w-full border-collapse border border-black">
+                                <tbody>
+                                    <tr><td className="border border-black p-0.5 bg-gray-50 uppercase">Coil / Skid</td><td className="border border-black p-0.5 text-center font-bold">{totals.coil}</td></tr>
+                                    <tr><td className="border border-black p-0.5 bg-gray-50 uppercase">Berat</td><td className="border border-black p-0.5 text-center font-bold">{totals.berat}</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="w-2/5 border-r border-black p-1.5 bg-pink-50/50">
+                            <div className="font-bold uppercase mb-0.5">Definisi • Rule</div>
+                            <p className="mb-0 leading-tight">• Coil set: Memasukkan Coil ke Drum (Persiapan, Visual cek, Scan).</p>
+                            <p className="mb-0 leading-tight">• Start Process: Setelah bagian top coil ditarik recoiler / Running Otomatis.</p>
                             <p className="mb-0 leading-tight">• End Process: Setelah produk terlepas dari drum / Potongan terakhir.</p>
                             <p className="mb-0 leading-tight">• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
                         </div>
                         <div className="flex-1 p-1 flex flex-col">
                             <div className="border border-black flex-1 flex flex-col">
                                 <div className="text-center border-b border-black py-0.5 uppercase font-bold">Cek Leader</div>
-                                <div className="flex-1 flex items-end justify-center pb-1"><span className="border-b border-black px-8">{formHeader.leader || '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'}</span></div>
                             </div>
                         </div>
                     </div>
@@ -537,144 +562,116 @@
             );
         };
 
+        // =====================================================================
+        // KOMPONEN: LOGIN PAGE
+        // =====================================================================
         const LoginPage = ({ onLogin }) => {
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
-            const [error, setError] = useState('');
-            const [loading, setLoading] = useState(false);
             const [showPw, setShowPw] = useState(false);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
 
-            const handleLogin = (e) => {
-                e.preventDefault();
-                setError(''); setLoading(true);
-                
-                const scriptURL = `${API_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`;
-                
-                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
-                    document.body.removeChild(script);
-                    if(data.status === 'success') {
-                        localStorage.setItem('user_session', JSON.stringify(data.user));
-                        onLogin(data.user);
-                    } else {
-                        setError(data.message);
-                        setLoading(false);
-                    }
+            const handleLogin = async () => {
+                if (!username.trim() || !password.trim()) { setError('Username dan Password wajib diisi.'); return; }
+                setLoading(true); setError('');
+
+                const tryJSONP = () => new Promise((resolve, reject) => {
+                    const cbName = 'cb_' + Date.now();
+                    const script = document.createElement('script');
+                    const timer = setTimeout(() => { delete window[cbName]; document.body.removeChild(script); reject(new Error('JSONP timeout')); }, 10000);
+                    window[cbName] = (data) => { clearTimeout(timer); delete window[cbName]; document.body.removeChild(script); resolve(data); };
+                    script.src = `${API_URL}?action=login&username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password.trim())}&callback=${cbName}`;
+                    script.onerror = () => { clearTimeout(timer); reject(new Error('JSONP script error')); };
+                    document.body.appendChild(script);
+                });
+
+                const tryGet = async () => {
+                    const url = `${API_URL}?action=login&username=${encodeURIComponent(username.trim())}&password=${encodeURIComponent(password.trim())}`;
+                    const res = await fetch(url, { redirect: 'follow' });
+                    return JSON.parse(await res.text());
                 };
 
-                const script = document.createElement('script');
-                script.src = scriptURL + '&callback=' + callbackName;
-                script.onerror = () => { setError('Gagal terhubung ke server.'); setLoading(false); };
-                document.body.appendChild(script);
+                const tryPost = async () => {
+                    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'login', username: username.trim(), password: password.trim() }), redirect: 'follow' });
+                    return JSON.parse(await res.text());
+                };
+
+                let result = null; let lastError = '';
+                try { result = await tryJSONP(); } catch(e0) {
+                    lastError = 'JSONP: ' + e0.message;
+                    try { result = await tryGet(); } catch(e1) {
+                        lastError += ' | GET: ' + e1.message;
+                        try { result = await tryPost(); } catch(e2) {
+                            lastError += ' | POST: ' + e2.message; result = null;
+                        }
+                    }
+                }
+                setLoading(false);
+                if (!result) { setError(`Koneksi gagal (${lastError}). Pastikan URL API benar.`); return; }
+                if (result.status === 'success') { onLogin(result.user); } else { setError(result.message || 'Username atau Password Salah!'); }
             };
 
             return (
-                <div className="login-bg font-sans">
-                    <div className="absolute top-8 left-8 z-20 text-white flex items-center gap-3">
-                        <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                        </div>
-                        <div>
-                            <div className="font-black text-2xl tracking-wide leading-none text-white drop-shadow-md" style={{ fontFamily: 'Arial Black, sans-serif' }}>PT. HSSI</div>
-                            <div className="text-xs uppercase tracking-[0.2em] text-blue-100 font-bold opacity-80 mt-0.5">Slitting Division</div>
-                        </div>
-                    </div>
-                    
+                <div className="login-bg">
                     <div className="login-left">
-                        <h1 className="text-5xl font-black text-white leading-[1.1] mb-6 drop-shadow-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>
-                            PRODUCTION<br/>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#f1c40f] to-[#e67e22]">CONTROL CENTER</span>
-                        </h1>
-                        <p className="text-blue-100 text-lg max-w-md leading-relaxed drop-shadow">
-                            Sistem Manajemen dan Pelaporan Hasil Produksi Slitting secara Real-time.
-                        </p>
+                        <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
+                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level</h2>
                     </div>
-
                     <div className="login-card">
-                        <div className="mb-10 text-center">
-                            <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
-                            <p className="text-sm text-gray-300">Please enter your credentials to login.</p>
-                        </div>
-
-                        <form onSubmit={handleLogin}>
-                            <div className="login-input-wrap">
-                                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                                <input type="text" placeholder="Username (Line)" value={username} onChange={(e) => setUsername(e.target.value)} required />
-                            </div>
-                            
-                            <div className="login-input-wrap">
-                                <svg className="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                <input type={showPw ? "text" : "password"} placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                                <button type="button" className="toggle-pw" onClick={() => setShowPw(!showPw)}>
-                                    {showPw ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>}
-                                </button>
-                            </div>
-
+                        <div style={{ textAlign: 'center', marginBottom: '28px' }}><h1 style={{ color: 'white', fontSize: '18px', fontWeight: '900', letterSpacing: '1px', lineHeight: 1.3, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>PT HANWA STEEL SERVICE<br />INDONESIA</h1><div className="login-divider" style={{ margin: '14px auto' }}></div><p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: '500' }}>Sign in to your account</p></div>
+                        <div>
+                            <div className="login-input-wrap"><span className="input-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><input type="text" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') handleLogin()}} disabled={loading} /></div>
+                            <div className="login-input-wrap"><span className="input-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><input type={showPw ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => {if(e.key === 'Enter') handleLogin()}} disabled={loading} /><button className="toggle-pw" onClick={() => setShowPw(!showPw)}>{showPw ? '👁️' : '🔒'}</button></div>
+                            <button className="btn-signin" onClick={handleLogin} disabled={loading}>{loading ? 'Signing in...' : 'Sign In'}</button>
                             {error && <div className="login-error">{error}</div>}
-
-                            <button type="submit" className="btn-signin" disabled={loading}>
-                                {loading ? 'AUTHENTICATING...' : 'SIGN IN'}
-                            </button>
-                        </form>
-                        
-                        <div className="mt-auto pt-8 text-center text-xs text-gray-400">
-                            &copy; 2025 PT. Hanwa Steel Service Indonesia.<br/>Production Planning & Control.
                         </div>
                     </div>
                 </div>
             );
         };
 
+        // =====================================================================
+        // KOMPONEN: MAIN LAYOUT
+        // =====================================================================
         const App = () => {
             const [user, setUser] = useState(null);
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
             const [activeMenu, setActiveMenu] = useState('menu1');
-            const [isCheckingSession, setIsCheckingSession] = useState(true);
-
-            useEffect(() => {
-                const session = localStorage.getItem('user_session');
-                if(session) { try { setUser(JSON.parse(session)); } catch(e) {} }
-                setIsCheckingSession(false);
-            }, []);
-
-            if (isCheckingSession) return <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white">Loading...</div>;
-            if (!user) return <LoginPage onLogin={setUser} />;
 
             const menus = [
-                { id: 'menu1', title: 'Input Data Production', icon: <IconDashboard /> },
-                { id: 'menu2', title: 'Summary Report', icon: <IconReport /> },
-                { id: 'menu3', title: 'Upload Data ERP', icon: <IconUpload /> },
-                { id: 'menu4', title: 'Data Analysis', icon: <IconAnalyze /> }
+                { id: 'menu1', title: 'Production Report', icon: <IconReport /> },
+                { id: 'menu2', title: 'Dashboard Monitor', icon: <IconDashboard /> },
+                { id: 'menu3', title: 'Upload Planning', icon: <IconUpload /> },
+                { id: 'menu4', title: 'OEE Analysis', icon: <IconAnalyze /> },
+                { id: 'menu5', title: 'Print NG Report', icon: <IconPrint /> },
             ];
 
-            return (
-                <div className="flex h-screen overflow-hidden bg-gray-100 font-sans">
-                    <aside className={`bg-[#1e2228] text-gray-300 transition-all duration-300 flex flex-col ${isSidebarOpen ? 'w-[240px]' : 'w-20'} no-print`}>
-                        <div className="h-[60px] bg-[#22272e] flex items-center justify-center border-b border-[#1e2228]">{isSidebarOpen ? <span className="font-bold text-white text-lg tracking-wider">HSSI PPC</span> : <span className="font-bold text-white text-lg">PPC</span>}</div>
-                        <nav className="flex-1 py-4 overflow-y-auto">
-                            {menus.map(m => (
-                                <button key={m.id} onClick={() => setActiveMenu(m.id)} className={`w-full flex items-center px-4 py-3 mb-1 transition-colors border-l-4 ${activeMenu === m.id ? 'bg-[#2b3038] border-[#3498db] text-white' : 'border-transparent hover:bg-[#2b3038] hover:text-white'}`}>
-                                    <span className="w-8 flex justify-center text-gray-400">{m.icon}</span>
-                                    {isSidebarOpen && <span className="ml-3 text-sm font-medium whitespace-nowrap">{m.title}</span>}
-                                </button>
-                            ))}
-                        </nav>
-                        <div className="p-4 border-t border-[#2b3038] text-center">
-                            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-500 hover:text-white p-2 rounded bg-[#1e2228]"><IconMenu /></button>
-                        </div>
-                    </aside>
+            if (!user) return <LoginPage onLogin={(u) => setUser(u)} />;
 
-                    <div className="flex-1 flex flex-col min-w-0">
-                        <header className="h-[60px] bg-[#34495e] flex items-center justify-between px-6 shadow z-10 no-print border-b border-gray-700">
-                            <div className="flex items-center gap-4 text-white"><h1 className="text-lg font-bold tracking-wider">{menus.find(m => m.id === activeMenu)?.title}</h1></div>
+            return (
+                <div className="flex h-screen bg-[#f4f6f9] overflow-hidden print-flatten">
+                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'} no-print`}>
+                        <div className="h-[60px] bg-[#22272e] flex items-center justify-center border-b border-[#1e2228]">{isSidebarOpen ? <span className="font-bold text-xl text-white tracking-widest uppercase">HSSI <span className="text-blue-500">SYSTEM</span></span> : <span className="text-blue-500 font-bold">HS</span>}</div>
+                        <div className="flex-1 overflow-y-auto py-6">
+                            <ul className="space-y-1">
+                                {menus.map((menu) => (
+                                    <li key={menu.id}><button onClick={() => setActiveMenu(menu.id)} className={`w-full flex items-center py-3 transition-all border-l-4 ${activeMenu === menu.id ? 'bg-[#252a31] border-blue-500 text-white' : 'border-transparent hover:bg-[#252a31] hover:text-white'} ${isSidebarOpen ? 'px-5' : 'justify-center'}`}><span className={`${activeMenu === menu.id ? 'text-blue-500' : ''}`}>{menu.icon}</span>{isSidebarOpen && <span className="ml-4 text-sm font-medium tracking-wide">{menu.title}</span>}</button></li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 flex flex-col overflow-hidden relative print-flatten">
+                        <header className="h-[60px] bg-[#a84444] shadow-md flex items-center px-4 z-10 gap-4 no-print justify-between">
+                            <div className="flex items-center gap-4"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white p-2 hover:bg-[#913b3b] rounded transition-colors"><IconMenu /></button><h1 className="text-lg font-bold text-white uppercase tracking-wider">{menus.find(m => m.id === activeMenu)?.title}</h1></div>
                             <div className="flex items-center gap-3">
                                 <div className="text-right"><div className="text-white text-sm font-bold leading-tight">{user.name}</div><div className="text-red-200 text-xs leading-tight uppercase tracking-wide">{user.role}</div></div>
-                                <button onClick={() => { if(window.confirm('Yakin ingin logout?')) { localStorage.removeItem('user_session'); setUser(null); } }} className="text-white p-2 hover:bg-[#913b3b] rounded"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></button>
+                                <button onClick={() => { if(window.confirm('Yakin ingin logout?')) setUser(null); }} className="text-white p-2 hover:bg-[#913b3b] rounded"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></button>
                             </div>
                         </header>
                         <main className="flex-1 overflow-auto p-3 bg-[#f4f6f9] print-flatten">
-                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600 no-print"><h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">COMING SOON</h2><p className="text-gray-500 mt-2 font-medium">Modul {menus.find(m => m.id === activeMenu)?.title} sedang dalam tahap pengembangan.</p></div>}
+                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600 no-print"><h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">Module Under Development</h2></div>}
                         </main>
                     </div>
                 </div>
