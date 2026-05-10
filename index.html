@@ -96,7 +96,6 @@
                 ot: '', 
                 members: Array(10).fill('') 
             });
-            // process_id ditambah untuk keperluan EDIT Baris tertentu
             const [formProses, setFormProses] = useState({
                 process_id: '', ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
                 weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', 
@@ -158,16 +157,13 @@
 
             const totals = calculateTotals();
 
-            // HELPER FUNGSI UNTUK MEMBENTUK FORMAT WAKTU (HH:mm) SAAT LOAD DATA TABEL & EDIT
             const formatTime = (val) => {
                 if (!val) return '';
                 try {
-                    // Jika dari Backend turunnya string ISO Date (Google Sheets behavior)
                     if (String(val).includes('T') || String(val).includes('1899')) {
                         const d = new Date(val);
                         return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
                     }
-                    // Jika string biasa format HH:mm:ss, kita ambil HH:mm nya saja
                     return String(val).substring(0, 5);
                 } catch(e) { return val; }
             };
@@ -205,7 +201,6 @@
                 setFormProses(prev => ({ ...prev, [field]: timeString }));
             };
 
-            // FUNGSI EDIT DATA
             const handleEdit = (row) => {
                 setFormProses({
                     process_id: row.Process_ID || row['Process_ID'] || '',
@@ -248,7 +243,6 @@
                 setIsFormOpen(true);
             };
 
-            // FUNGSI HAPUS DATA
             const handleDelete = async (processId) => {
                 if(!window.confirm("Yakin ingin menghapus data baris ini?")) return;
                 setLoading(true);
@@ -309,23 +303,27 @@
             return (
                 <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen relative">
                     
-                    <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
-                        <div className="flex flex-wrap gap-4 items-end">
-                            <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
-                                <input type="date" className="border p-2 rounded text-sm w-40 font-bold" value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} />
+                    {/* Header Controls (Navigasi Biru Sejajar) */}
+                    <div className="bg-white p-2 border-b-2 border-gray-800 flex flex-wrap items-center justify-between no-print mb-2 gap-2">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs font-bold uppercase whitespace-nowrap">Tanggal</label>
+                                <input type="date" className="border border-gray-300 p-1.5 rounded text-sm w-36 font-bold focus:border-blue-500 outline-none" value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} />
                             </div>
-                            <div><label className="block text-xs font-bold mb-1 uppercase">Line</label>
-                                <input type="text" readOnly className="border p-2 rounded text-sm w-32 bg-gray-100 font-bold text-center" value={formHeader.line} />
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs font-bold uppercase whitespace-nowrap">Line</label>
+                                <input type="text" readOnly className="border border-gray-300 p-1.5 rounded text-sm w-24 bg-gray-100 font-bold text-center outline-none" value={formHeader.line} />
                             </div>
-                            <button onClick={loadData} className="bg-blue-100 text-blue-700 p-2 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
+                            <button onClick={loadData} title="Refresh Data" className="bg-blue-100 text-blue-700 p-1.5 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
                         </div>
                         
-                        <div className="flex flex-wrap gap-2">
-                            <button onClick={openForm} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
-                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-2 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
+                        <div className="flex items-center gap-2">
+                            <button onClick={openForm} className="bg-green-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
+                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
                         </div>
                     </div>
 
+                    {/* MODAL FORM INPUT */}
                     {isFormOpen && (
                         <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4">
                             <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
@@ -395,7 +393,6 @@
                                                         <div><label className={labelStyle}>Qty Total</label><input type="number" className={inputStyle} value={formProses.qty_total} onChange={e => setFormProses({...formProses, qty_total: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Total Length</label><input type="text" className={inputStyle} value={formProses.total_length} onChange={e => setFormProses({...formProses, total_length: e.target.value})} /></div>
                                                         
-                                                        {/* INPUT JAM DENGAN TOMBOL NOW */}
                                                         <div>
                                                             <label className={labelStyle}>Coil Set Lifter</label>
                                                             <div className="flex gap-1">
@@ -465,8 +462,8 @@
                         </div>
                     )}
 
-                    {/* Print Header */}
-                    <div className="w-full flex justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
+                    {/* Print Header (Kotak Merah yang Anda Minta Disembunyikan, Namun Muncul Saat di Print) */}
+                    <div className="hidden print:flex w-full justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
                         <div className="w-1/3 text-lg font-bold">Tanggal : <span className="border-b border-black min-w-[150px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
                         <div className="w-1/3 text-center"><h1 className="text-3xl font-black tracking-widest uppercase">PRODUCTION REPORT</h1></div>
                         <div className="w-1/3 flex justify-end gap-4 font-bold">
@@ -475,12 +472,12 @@
                         </div>
                     </div>
 
-                    {/* Main Excel Table */}
-                    <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '55vh' }}>
+                    {/* Main Excel Table (Tinggi Maksimal Tabel Diperbesar) */}
+                    <div className="overflow-x-auto overflow-y-auto border border-black" style={{ maxHeight: '70vh' }}>
                         <table className="excel-table">
                             <thead>
                                 <tr>
-                                    <th rowSpan="2" className="sticky-col no-print">Aksi</th>
+                                    <th rowSpan="2" className="sticky-col no-print bg-white">Aksi</th>
                                     <th rowSpan="2" className="w-10">NO</th>
                                     <th rowSpan="2" className="w-32">CC NO</th>
                                     <th rowSpan="2" className="w-32">Customer</th>
@@ -507,11 +504,10 @@
                             </thead>
                             <tbody>
                                 {rows.length === 0 ? (
-                                    <tr><td colSpan="28" className="p-8 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
+                                    <tr><td colSpan="28" className="p-8 text-gray-400 italic font-bold">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
                                 ) : rows.map((r, i) => (
                                     <tr key={i}>
                                         <td className="sticky-col no-print bg-white">
-                                            {/* TOMBOL AKSI AKTIF */}
                                             <div className="flex gap-3 justify-center">
                                                 <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 font-bold" title="Edit Data">✎</button>
                                                 <button onClick={() => handleDelete(r.Process_ID || r['Process_ID'])} className="text-red-600 hover:text-red-800 font-bold" title="Hapus Data">🗑</button>
@@ -530,7 +526,6 @@
                                         <td className="font-bold bg-gray-100">{r.qty_total || r['Total'] || ''}</td>
                                         <td>{r.total_length || r['Total Length'] || ''}</td>
                                         
-                                        {/* WAKTU DI FORMAT HH:mm DI TABEL */}
                                         <td className="font-bold text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
                                         <td className="font-bold text-green-900 bg-green-50/50">{formatTime(r.start_process || r['Start Proses'])}</td>
                                         <td className="font-bold text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
