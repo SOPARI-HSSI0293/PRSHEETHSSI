@@ -96,8 +96,9 @@
                 ot: '', 
                 members: Array(10).fill('') 
             });
+            // process_id ditambah untuk keperluan EDIT Baris tertentu
             const [formProses, setFormProses] = useState({
-                ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
+                process_id: '', ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
                 weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', 
                 qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', 
                 prod_keluar: '', line_speed: '', remark: ''
@@ -157,6 +158,20 @@
 
             const totals = calculateTotals();
 
+            // HELPER FUNGSI UNTUK MEMBENTUK FORMAT WAKTU (HH:mm) SAAT LOAD DATA TABEL & EDIT
+            const formatTime = (val) => {
+                if (!val) return '';
+                try {
+                    // Jika dari Backend turunnya string ISO Date (Google Sheets behavior)
+                    if (String(val).includes('T') || String(val).includes('1899')) {
+                        const d = new Date(val);
+                        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                    }
+                    // Jika string biasa format HH:mm:ss, kita ambil HH:mm nya saja
+                    return String(val).substring(0, 5);
+                } catch(e) { return val; }
+            };
+
             const handleQrScan = (decodedText) => {
                 try {
                     const parts = decodedText.split(',');
@@ -169,11 +184,7 @@
                         const weight = parts[5] ? parts[5].trim() : '';
 
                         setFormProses(prev => ({
-                            ...prev, 
-                            ccno: ccno, 
-                            spec: specName, 
-                            raw_mat_size: rawMatSize, 
-                            weight_raw: weight 
+                            ...prev, ccno: ccno, spec: specName, raw_mat_size: rawMatSize, weight_raw: weight 
                         }));
                         alert("Data QR Material Berhasil Diekstrak!");
                     } else { alert("Format QR tidak sesuai rule."); }
@@ -186,7 +197,6 @@
                 setFormHeader({ ...formHeader, members: newMembers });
             };
 
-            // FUNGSI BARU: Set Waktu Saat Ini
             const setTimeNow = (field) => {
                 const now = new Date();
                 const hours = String(now.getHours()).padStart(2, '0');
@@ -195,11 +205,71 @@
                 setFormProses(prev => ({ ...prev, [field]: timeString }));
             };
 
+            // FUNGSI EDIT DATA
+            const handleEdit = (row) => {
+                setFormProses({
+                    process_id: row.Process_ID || row['Process_ID'] || '',
+                    ccno: row.ccno || row['CC No'] || '',
+                    customer: row.customer || row['Customer'] || '',
+                    spec: row.spec || row['Spec'] || '',
+                    raw_mat_size: row.mc_semi_prod_size || row['Raw Material Size'] || '',
+                    actual_width: row.actual_width_mc || row['Actual Width Raw Material'] || '',
+                    weight_raw: row.weight || row['Weight Raw Material'] || '',
+                    weight_cb: row.weight_coil_back || row['Weight Coil Back'] || '',
+                    product_size: row.product_size || row['Product Size'] || '',
+                    qty_fg: row.qty_fg || row['Qty FG'] || '',
+                    qty_ng: row.qty_ng || row['Qty NG'] || '',
+                    qty_total: row.qty_total || row['Total'] || '', 
+                    total_length: row.total_length || row['Total Length'] || '',
+                    coil_set: formatTime(row.coil_set_lifter || row['Coil Set Lifter']),
+                    start_proc: formatTime(row.start_process || row['Start Proses']),
+                    end_proc: formatTime(row.end_process || row['End Proses']),
+                    prod_keluar: formatTime(row.produk_keluar_mesin || row['Product Keluar dari Mesin']),
+                    line_speed: row.line_speed || row['Line Speed'] || '',
+                    remark: row.remark || row['Remark'] || ''
+                });
+
+                setFormDowntime({
+                    tbm: row.dt_tbm || row['TBM'] || '',
+                    packing_cb: row.dt_packing_coil_back || row['Packing Coil Back'] || '',
+                    waiting_mc: row.dt_waiting_mc || row['Waiting MC'] || '',
+                    waiting_hagumi: row.dt_waiting_hagumi || row['Waiting Hagumi'] || '',
+                    waiting_crane: row.dt_waiting_crane || row['Waiting Crane'] || '',
+                    hagumi_sep: row.dt_hagumi_separator || row['Hagumi/Separator'] || '',
+                    winder: row.dt_winder_top_end || row['Winder Top/End'] || '',
+                    cleaning: row.dt_cleaning_mesin || row['Cleaning Mesin'] || '',
+                    machine_prob: row.dt_machine_problem || row['Machine Problem'] || '',
+                    other: row.dt_other || row['Other'] || ''
+                });
+
+                setIsProsesOpen(true);
+                setIsDowntimeOpen(true);
+                setActiveTab('INPUT DATA');
+                setIsFormOpen(true);
+            };
+
+            // FUNGSI HAPUS DATA
+            const handleDelete = async (processId) => {
+                if(!window.confirm("Yakin ingin menghapus data baris ini?")) return;
+                setLoading(true);
+                try {
+                    const res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'deleteData', process_id: processId })
+                    });
+                    const result = await res.json();
+                    if(result.status === 'success') {
+                        alert(result.message);
+                        loadData(); 
+                    } else { alert("Gagal: " + result.message); }
+                } catch(e) { alert("Error koneksi!"); }
+                setLoading(false);
+            };
+
             const submitData = async () => {
                 setLoading(true);
-                const combinedMembers = formHeader.members
-                    .filter(m => m.trim() !== '')
-                    .join(', ');
+                const combinedMembers = formHeader.members.filter(m => m.trim() !== '').join(', ');
 
                 const payload = { 
                     action: 'saveData', 
@@ -225,12 +295,10 @@
             };
 
             const openForm = () => {
-                setFormProses({ ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: '' });
+                setFormProses({ process_id: '', ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: '' });
                 setFormDowntime({ tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', hagumi_sep: '', winder: '', cleaning: '', machine_prob: '', other: '' });
-                
                 setIsProsesOpen(true);
                 setIsDowntimeOpen(true);
-                
                 setIsFormOpen(true);
                 setActiveTab('HEADER');
             };
@@ -241,7 +309,6 @@
             return (
                 <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen relative">
                     
-                    {/* Header Controls */}
                     <div className="bg-white p-4 border-b-2 border-gray-800 flex flex-wrap gap-4 items-end justify-between no-print mb-4">
                         <div className="flex flex-wrap gap-4 items-end">
                             <div><label className="block text-xs font-bold mb-1 uppercase">Tanggal</label>
@@ -259,12 +326,11 @@
                         </div>
                     </div>
 
-                    {/* MODAL FORM INPUT */}
                     {isFormOpen && (
                         <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4">
                             <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
                                 <div className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
-                                    <h2 className="text-lg font-bold uppercase tracking-wider">Form Input Production</h2>
+                                    <h2 className="text-lg font-bold uppercase tracking-wider">{formProses.process_id ? 'Edit Data Production' : 'Input Data Production'}</h2>
                                     <button onClick={() => setIsFormOpen(false)} className="text-white hover:text-red-400 text-2xl font-bold">&times;</button>
                                 </div>
                                 
@@ -277,8 +343,6 @@
                                 </div>
 
                                 <div className="p-6 overflow-y-auto flex-1 bg-white hide-scrollbar">
-                                    
-                                    {/* TAB: HEADER */}
                                     {activeTab === 'HEADER' && (
                                         <div className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
@@ -302,19 +366,10 @@
                                         </div>
                                     )}
 
-                                    {/* TAB: GABUNGAN INPUT PROSES & DOWNTIME */}
                                     {activeTab === 'INPUT DATA' && (
                                         <div>
-                                            
-                                            {/* ACCORDION BAGIAN PROSES */}
-                                            <div 
-                                                className="flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm mb-2"
-                                                onClick={() => setIsProsesOpen(!isProsesOpen)}
-                                            >
-                                                <h3 className="font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2">
-                                                    <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> 
-                                                    Data Proses Produksi
-                                                </h3>
+                                            <div className="flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm mb-2" onClick={() => setIsProsesOpen(!isProsesOpen)}>
+                                                <h3 className="font-bold text-blue-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> Data Proses Produksi</h3>
                                                 <span className="text-blue-800">{isProsesOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
                                             </div>
 
@@ -340,7 +395,7 @@
                                                         <div><label className={labelStyle}>Qty Total</label><input type="number" className={inputStyle} value={formProses.qty_total} onChange={e => setFormProses({...formProses, qty_total: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Total Length</label><input type="text" className={inputStyle} value={formProses.total_length} onChange={e => setFormProses({...formProses, total_length: e.target.value})} /></div>
                                                         
-                                                        {/* --- MODIFIKASI INPUT WAKTU DENGAN TOMBOL 'NOW' --- */}
+                                                        {/* INPUT JAM DENGAN TOMBOL NOW */}
                                                         <div>
                                                             <label className={labelStyle}>Coil Set Lifter</label>
                                                             <div className="flex gap-1">
@@ -369,7 +424,6 @@
                                                                 <button type="button" onClick={() => setTimeNow('prod_keluar')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
                                                             </div>
                                                         </div>
-                                                        {/* ------------------------------------------------ */}
 
                                                         <div><label className={labelStyle}>Line Speed</label><input type="text" className={inputStyle} value={formProses.line_speed} onChange={e => setFormProses({...formProses, line_speed: e.target.value})} /></div>
                                                         <div className="col-span-2"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
@@ -377,19 +431,11 @@
                                                 </div>
                                             )}
 
-                                            <div className="relative my-6">
-                                                <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div>
-                                            </div>
+                                            <div className="relative my-6"><div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div></div>
 
                                             {/* ACCORDION BAGIAN DOWNTIME */}
-                                            <div 
-                                                className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2"
-                                                onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}
-                                            >
-                                                <h3 className="font-bold text-red-800 uppercase tracking-wide flex items-center gap-2">
-                                                    <span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> 
-                                                    Data Downtime (Loss Time)
-                                                </h3>
+                                            <div className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2" onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}>
+                                                <h3 className="font-bold text-red-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Data Downtime (Loss Time)</h3>
                                                 <span className="text-red-800">{isDowntimeOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
                                             </div>
 
@@ -412,7 +458,7 @@
                                 <div className="bg-gray-100 p-4 border-t flex justify-end gap-3 rounded-b-lg">
                                     <button onClick={() => setIsFormOpen(false)} className="px-6 py-2 rounded font-bold text-gray-600 bg-gray-200 hover:bg-gray-300">Batal / Tutup</button>
                                     <button onClick={submitData} disabled={loading} className="px-6 py-2 rounded font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg">
-                                        {loading ? 'Menyimpan...' : 'Simpan Data'}
+                                        {loading ? 'Menyimpan...' : (formProses.process_id ? 'Update Data' : 'Simpan Data')}
                                     </button>
                                 </div>
                             </div>
@@ -464,7 +510,13 @@
                                     <tr><td colSpan="28" className="p-8 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
                                 ) : rows.map((r, i) => (
                                     <tr key={i}>
-                                        <td className="sticky-col no-print bg-white"><div className="flex gap-2 justify-center"><button className="text-blue-600">✎</button><button className="text-red-600">🗑</button></div></td>
+                                        <td className="sticky-col no-print bg-white">
+                                            {/* TOMBOL AKSI AKTIF */}
+                                            <div className="flex gap-3 justify-center">
+                                                <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 font-bold" title="Edit Data">✎</button>
+                                                <button onClick={() => handleDelete(r.Process_ID || r['Process_ID'])} className="text-red-600 hover:text-red-800 font-bold" title="Hapus Data">🗑</button>
+                                            </div>
+                                        </td>
                                         <td>{i+1}</td>
                                         <td className="font-bold">{r.ccno || r['CC No'] || ''}</td>
                                         <td>{r.customer || r['Customer'] || ''}</td>
@@ -477,10 +529,13 @@
                                         <td>{r.qty_ng || r['Qty NG'] || ''}</td>
                                         <td className="font-bold bg-gray-100">{r.qty_total || r['Total'] || ''}</td>
                                         <td>{r.total_length || r['Total Length'] || ''}</td>
-                                        <td>{r.coil_set_lifter || r['Coil Set Lifter'] || ''}</td>
-                                        <td>{r.start_process || r['Start Proses'] || ''}</td>
-                                        <td>{r.end_process || r['End Proses'] || ''}</td>
-                                        <td>{r.produk_keluar_mesin || r['Product Keluar dari Mesin'] || ''}</td>
+                                        
+                                        {/* WAKTU DI FORMAT HH:mm DI TABEL */}
+                                        <td className="font-bold text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
+                                        <td className="font-bold text-green-900 bg-green-50/50">{formatTime(r.start_process || r['Start Proses'])}</td>
+                                        <td className="font-bold text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
+                                        <td className="font-bold text-gray-900 bg-gray-50/50">{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
+
                                         <td className="bg-blue-50/30">{r.dt_tbm || r['TBM'] || ''}</td>
                                         <td className="bg-blue-50/30">{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
                                         <td className="bg-blue-50/30">{r.dt_waiting_mc || r['Waiting MC'] || ''}</td>
@@ -599,7 +654,7 @@
                 <div className="login-bg">
                     <div className="login-left">
                         <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
-                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />versi 1<br />company to the<br />next level</h2>
+                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level</h2>
                     </div>
                     <div className="login-card">
                         <div style={{ textAlign: 'center', marginBottom: '28px' }}><h1 style={{ color: 'white', fontSize: '18px', fontWeight: '900', letterSpacing: '1px', lineHeight: 1.3, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>PT HANWA STEEL SERVICE<br />INDONESIA</h1><div className="login-divider" style={{ margin: '14px auto' }}></div><p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: '500' }}>Sign in to your account</p></div>
