@@ -19,10 +19,10 @@
         .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
         
-        /* Fix Sticky Header overlap (Kotak Merah) */
+        /* Fix Sticky Header overlap */
         .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
-        .excel-table thead tr:first-child th { height: 24px; } /* Kunci tinggi baris pertama */
-        .excel-table thead tr:nth-child(2) th { top: 24px; background-color: #e0f2fe; } /* Rapatkan ke 24px */
+        .excel-table thead tr:first-child th { height: 24px; } 
+        .excel-table thead tr:nth-child(2) th { top: 24px; background-color: #e0f2fe; } 
         
         .excel-table tbody tr:hover { background-color: #fef08a; }
         .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; font-weight: normal; }
@@ -200,7 +200,6 @@
             };
 
             const handleEdit = (row) => {
-                // Perbaikan mapping Qty Total agar saat di edit, data dari DB langsung muncul
                 setFormProses({
                     process_id: row.Process_ID || row['Process_ID'] || '', ccno: row.ccno || row['CC No'] || '', customer: row.customer || row['Customer'] || '',
                     spec: row.spec || row['Spec'] || '', raw_mat_size: row.mc_semi_prod_size || row['Raw Material Size'] || '', actual_width: row.actual_width_mc || row['Actual Width Raw Material'] || '',
@@ -431,7 +430,12 @@
                         <div className="w-1/3 text-center"><h1 className="text-2xl font-black tracking-widest uppercase m-0 p-0 line-height-1">PRODUCTION REPORT</h1></div>
                         <div className="w-1/3 flex justify-end gap-2 font-bold text-xs">
                             <div className="border border-black p-1 min-w-[60px] text-center"><div className="text-[9px]">LINE</div><div>{formHeader.line}</div></div>
-                            <div className="border border-black p-1 min-w-[60px] text-center flex items-center justify-center"><span className="mr-1 text-[9px]">OT</span> <span className="border-b border-black w-8"></span></div>
+                            
+                            {/* MODIFIKASI KOTAK OT: Memanggil variabel OT agar tampil otomatis */}
+                            <div className="border border-black p-1 min-w-[60px] text-center flex items-center justify-center">
+                                <span className="mr-1 text-[9px]">OT</span> 
+                                <span className="border-b border-black min-w-[30px] text-center inline-block">{formHeader.ot}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -495,10 +499,7 @@
                                         <td>{r.product_size || r['Product Size'] || ''}</td>
                                         <td>{r.qty_fg || r['Qty FG'] || ''}</td>
                                         <td>{r.qty_ng || r['Qty NG'] || ''}</td>
-                                        
-                                        {/* Perbaikan Data Qty Total untuk membaca kemungkinan variasi penamaan kolom di Database */}
                                         <td className="font-bold bg-gray-100">{r.qty_total || r['Qty Total'] || r['Total'] || ''}</td>
-                                        
                                         <td>{r.total_length || r['Total Length'] || ''}</td>
                                         
                                         <td className="text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
@@ -525,7 +526,6 @@
                     </div>
 
                     {/* Footer Area - LINE MEMBER */}
-                    {/* Perbaikan Kotak Biru: Menambahkan table-fixed dan membagi dua sisi 50% masing-masing */}
                     <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
                         <div className="w-1/4 border-r border-black p-1">
                             <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
@@ -559,9 +559,16 @@
                             <p className="mb-0 leading-tight">• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
                         </div>
                         <div className="flex-1 p-1 flex flex-col">
-                            <div className="border border-black flex-1 flex flex-col">
+                            
+                            {/* MODIFIKASI KOTAK CEK LEADER: Membuat layout atas-bawah dan memanggil nama Leader */}
+                            <div className="border border-black flex-1 flex flex-col justify-between">
                                 <div className="text-center border-b border-black py-0.5 uppercase font-bold">Cek Leader</div>
+                                <div className="flex-1 min-h-[25px]"></div> {/* Space tanda tangan */}
+                                <div className="text-center py-0.5 font-bold uppercase truncate px-1 border-t border-dashed border-gray-400 text-[10px]">
+                                    {formHeader.leader}
+                                </div>
                             </div>
+                            
                         </div>
                     </div>
                 </div>
