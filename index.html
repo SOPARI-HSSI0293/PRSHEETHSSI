@@ -18,9 +18,13 @@
         /* Modifikasi Table Layout Standar Excel */
         .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
-        .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
-        .excel-table tbody tr:hover { background-color: #fef08a; }
         
+        /* Fix Sticky Header overlap (Kotak Merah) */
+        .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
+        .excel-table thead tr:first-child th { height: 24px; } /* Kunci tinggi baris pertama */
+        .excel-table thead tr:nth-child(2) th { top: 24px; background-color: #e0f2fe; } /* Rapatkan ke 24px */
+        
+        .excel-table tbody tr:hover { background-color: #fef08a; }
         .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; font-weight: normal; }
         .excel-table th.sticky-col { z-index: 15; background-color: #f3f4f6; }
 
@@ -40,7 +44,6 @@
         .btn-signin { width: 100%; background: #27ae60; color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; border: none; border-radius: 6px; padding: 14px; cursor: pointer; margin-top: 6px; }
         .login-error { background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.6); color: #fce4e4; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-top: 12px; text-align: center; }
 
-        /* SETTING PRINT A3 */
         @media print {
             @page { size: A3 landscape; margin: 10mm; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -61,6 +64,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // PASTIKAN API_URL INI SESUAI DENGAN DEPLOYMENT BARU ANDA
         const API_URL = 'https://script.google.com/macros/s/AKfycbxtYvl-g9l0GhIIEYkKFGnI31MFExXj92YRayum1nePexSSeIbyOalk6a1Pcq8vdmx4/exec';
 
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
@@ -184,7 +188,7 @@
                     const updated = { ...prev, [field]: value };
                     const fg = parseFloat(updated.qty_fg) || 0;
                     const ng = parseFloat(updated.qty_ng) || 0;
-                    updated.qty_total = fg + ng; 
+                    updated.qty_total = fg + ng;
                     return updated;
                 });
             };
@@ -196,11 +200,13 @@
             };
 
             const handleEdit = (row) => {
+                // Perbaikan mapping Qty Total agar saat di edit, data dari DB langsung muncul
                 setFormProses({
                     process_id: row.Process_ID || row['Process_ID'] || '', ccno: row.ccno || row['CC No'] || '', customer: row.customer || row['Customer'] || '',
                     spec: row.spec || row['Spec'] || '', raw_mat_size: row.mc_semi_prod_size || row['Raw Material Size'] || '', actual_width: row.actual_width_mc || row['Actual Width Raw Material'] || '',
                     weight_raw: row.weight || row['Weight Raw Material'] || '', weight_cb: row.weight_coil_back || row['Weight Coil Back'] || '', product_size: row.product_size || row['Product Size'] || '',
-                    qty_fg: row.qty_fg || row['Qty FG'] || '', qty_ng: row.qty_ng || row['Qty NG'] || '', qty_total: row.qty_total || row['Total'] || '', 
+                    qty_fg: row.qty_fg || row['Qty FG'] || '', qty_ng: row.qty_ng || row['Qty NG'] || '', 
+                    qty_total: row.qty_total || row['Qty Total'] || row['Total'] || '', 
                     total_length: row.total_length || row['Total Length'] || '', coil_set: formatTime(row.coil_set_lifter || row['Coil Set Lifter']), start_proc: formatTime(row.start_process || row['Start Proses']),
                     end_proc: formatTime(row.end_process || row['End Proses']), prod_keluar: formatTime(row.produk_keluar_mesin || row['Product Keluar dari Mesin']), line_speed: row.line_speed || row['Line Speed'] || '', remark: row.remark || row['Remark'] || ''
                 });
@@ -251,8 +257,7 @@
                 time: { width: '40px' }, lineSpeed: { width: '40px' }, remark: { width: 'auto', minWidth: '90px' }
             };
 
-            // Gaya Khusus Header Downtime - Kini sejajar 1 tingkat dengan warna latar berbeda
-            const dtHeaderStyle = "bg-blue-100 text-center px-1 leading-tight text-blue-900 font-bold uppercase";
+            const dtHeaderStyle = "bg-blue-50 text-center px-1 leading-tight";
             const dtWidth = { width: '38px', whiteSpace: 'normal', wordWrap: 'break-word', fontSize: '9px' };
 
             return (
@@ -435,39 +440,38 @@
                         <table className="excel-table w-full">
                             <thead>
                                 <tr>
-                                    {/* SEMUA HEADER MENJADI 1 BARIS SEJAJAR */}
-                                    <th className="sticky-col no-print bg-white" style={colStyle.aksi}>Aksi</th>
-                                    <th style={colStyle.no}>NO</th>
-                                    <th style={colStyle.ccno}>CC NO</th>
-                                    <th style={colStyle.cust}>Customer</th>
-                                    <th style={colStyle.spec}>Spec</th>
-                                    <th style={colStyle.size}>MC/Semi Size</th>
-                                    <th style={colStyle.actual}>Actual Width</th>
-                                    <th style={colStyle.weight}>Weight</th>
-                                    <th style={colStyle.prodSize}>Product Size</th>
-                                    <th style={colStyle.qty}>Qty FG</th>
-                                    <th style={colStyle.qty}>Qty NG</th>
-                                    <th style={colStyle.qty}>Qty Total</th>
-                                    <th style={colStyle.length}>Total Length</th>
-                                    <th style={colStyle.time}>Coil Set</th>
-                                    <th style={colStyle.time}>Start</th>
-                                    <th style={colStyle.time}>End</th>
-                                    <th style={colStyle.time}>Produk Keluar</th>
-                                    
-                                    {/* Kolom Downtime (Prefix DT ditambahkan, 1 Baris) */}
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT TBM</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Packing</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Wait MC</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Wait Hagumi</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Wait Crane</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Hagumi/ Sep</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Winder</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Cleaning</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT MC Prob</th>
-                                    <th className={dtHeaderStyle} style={dtWidth}>DT Other</th>
-                                    
-                                    <th style={colStyle.lineSpeed}>Line Speed</th>
-                                    <th style={colStyle.remark}>Remark</th>
+                                    <th rowSpan="2" className="sticky-col no-print bg-white" style={colStyle.aksi}>Aksi</th>
+                                    <th rowSpan="2" style={colStyle.no}>NO</th>
+                                    <th rowSpan="2" style={colStyle.ccno}>CC NO</th>
+                                    <th rowSpan="2" style={colStyle.cust}>Customer</th>
+                                    <th rowSpan="2" style={colStyle.spec}>Spec</th>
+                                    <th rowSpan="2" style={colStyle.size}>MC/Semi Size</th>
+                                    <th rowSpan="2" style={colStyle.actual}>Actual Width</th>
+                                    <th rowSpan="2" style={colStyle.weight}>Weight</th>
+                                    <th rowSpan="2" style={colStyle.prodSize}>Product Size</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty FG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty NG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty Total</th>
+                                    <th rowSpan="2" style={colStyle.length}>Total Length</th>
+                                    <th rowSpan="2" style={colStyle.time}>Coil Set</th>
+                                    <th rowSpan="2" style={colStyle.time}>Start</th>
+                                    <th rowSpan="2" style={colStyle.time}>End</th>
+                                    <th rowSpan="2" style={colStyle.time}>Produk Keluar</th>
+                                    <th colSpan="10" className="bg-blue-100 uppercase" style={{fontSize: '11px'}}>Down Time (Minutes)</th>
+                                    <th rowSpan="2" style={colStyle.lineSpeed}>Line Speed</th>
+                                    <th rowSpan="2" style={colStyle.remark}>Remark</th>
+                                </tr>
+                                <tr>
+                                    <th className={dtHeaderStyle} style={dtWidth}>TBM</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Packing</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Wait MC</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Wait Hagumi</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Wait Crane</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Hagumi/ Sep</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Winder</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Cleaning</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Machine Prob</th>
+                                    <th className={dtHeaderStyle} style={dtWidth}>Other</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -491,7 +495,10 @@
                                         <td>{r.product_size || r['Product Size'] || ''}</td>
                                         <td>{r.qty_fg || r['Qty FG'] || ''}</td>
                                         <td>{r.qty_ng || r['Qty NG'] || ''}</td>
-                                        <td className="font-bold bg-gray-100">{r.qty_total || r['Total'] || ''}</td>
+                                        
+                                        {/* Perbaikan Data Qty Total untuk membaca kemungkinan variasi penamaan kolom di Database */}
+                                        <td className="font-bold bg-gray-100">{r.qty_total || r['Qty Total'] || r['Total'] || ''}</td>
+                                        
                                         <td>{r.total_length || r['Total Length'] || ''}</td>
                                         
                                         <td className="text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
@@ -499,16 +506,16 @@
                                         <td className="text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
                                         <td className="text-gray-900 bg-gray-50/50">{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
 
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_tbm || r['TBM'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_waiting_mc || r['Waiting MC'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_waiting_hagumi || r['Waiting Hagumi'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_waiting_crane || r['Waiting Crane'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_hagumi_separator || r['Hagumi/Separator'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_winder_top_end || r['Winder Top/End'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_cleaning_mesin || r['Cleaning Mesin'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_machine_problem || r['Machine Problem'] || ''}</td>
-                                        <td className="bg-blue-50/30 font-bold">{r.dt_other || r['Other'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_tbm || r['TBM'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_mc || r['Waiting MC'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_hagumi || r['Waiting Hagumi'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_waiting_crane || r['Waiting Crane'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_hagumi_separator || r['Hagumi/Separator'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_winder_top_end || r['Winder Top/End'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_cleaning_mesin || r['Cleaning Mesin'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_machine_problem || r['Machine Problem'] || ''}</td>
+                                        <td className="bg-blue-50/30">{r.dt_other || r['Other'] || ''}</td>
                                         <td>{r.line_speed || r['Line Speed'] || ''}</td>
                                         <td className="text-left" style={{textAlign: 'left'}}>{r.remark || r['Remark'] || ''}</td>
                                     </tr>
@@ -518,18 +525,18 @@
                     </div>
 
                     {/* Footer Area - LINE MEMBER */}
+                    {/* Perbaikan Kotak Biru: Menambahkan table-fixed dan membagi dua sisi 50% masing-masing */}
                     <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
                         <div className="w-1/4 border-r border-black p-1">
                             <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
-                            {/* PENYESUAIAN LEBAR KOLOM 50:50 yang DIKUNCI OLEH TABLE-FIXED */}
-                            <table className="w-full border-collapse border border-black text-center" style={{tableLayout: 'fixed'}}>
+                            <table className="w-full border-collapse border border-black text-center table-fixed">
                                 <tbody>
                                     {[0, 1, 2, 3, 4].map(i => (
                                         <tr key={i}>
-                                            <td className="border border-black bg-gray-50" style={{width: '20px'}}>{i + 1}</td>
-                                            <td className="border border-black h-4 text-left px-1 overflow-hidden whitespace-nowrap text-ellipsis">{displayMembers[i]}</td>
-                                            <td className="border border-black bg-gray-50" style={{width: '20px'}}>{i + 6}</td>
-                                            <td className="border border-black h-4 text-left px-1 overflow-hidden whitespace-nowrap text-ellipsis">{displayMembers[i + 5]}</td>
+                                            <td className="border border-black w-6 bg-gray-50">{i + 1}</td>
+                                            <td className="border border-black h-4 text-left px-1 truncate">{displayMembers[i]}</td>
+                                            <td className="border border-black w-6 bg-gray-50">{i + 6}</td>
+                                            <td className="border border-black h-4 text-left px-1 truncate">{displayMembers[i + 5]}</td>
                                         </tr>
                                     ))}
                                 </tbody>
