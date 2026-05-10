@@ -12,16 +12,17 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; }
+        body { font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         
-        .excel-table { border-collapse: collapse; width: 100%; font-size: 11px; }
-        .excel-table th, .excel-table td { border: 1px solid #000; padding: 4px; text-align: center; vertical-align: middle; white-space: nowrap; }
-        .excel-table th { background-color: #f3f4f6; font-weight: bold; position: sticky; top: 0; z-index: 10; }
-        .excel-table thead tr:nth-child(2) th { top: 29px; background-color: #e0f2fe; }
+        /* Modifikasi Table Layout Standar Excel */
+        .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
+        .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
+        .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; /* Bold dihilangkan */ line-height: 1.1; }
+        .excel-table thead tr:nth-child(2) th { top: 38px; background-color: #e0f2fe; }
         .excel-table tbody tr:hover { background-color: #fef08a; }
         
-        .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; }
+        .sticky-col { position: sticky; left: 0; background-color: #fff; z-index: 5; border-right: 2px solid #000 !important; font-weight: normal; }
         .excel-table th.sticky-col { z-index: 15; background-color: #f3f4f6; }
 
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
@@ -29,28 +30,41 @@
         
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; }
         
-        .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: flex-end; }
-        .login-bg::before { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1.5'%3E%3Ccircle cx='60' cy='60' r='50'/%3E%3Ccircle cx='60' cy='60' r='35'/%3E%3Ccircle cx='60' cy='60' r='20'/%3E%3Cpath d='M10 60 Q35 30 60 60 Q85 90 110 60'/%3E%3Cpath d='M60 10 Q90 35 60 60 Q30 85 60 110'/%3E%3C/g%3E%3C/svg%3E"); background-size: 120px 120px; }
-        .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
+        /* Login Styles */
+        .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; display: flex; align-items: center; justify-content: flex-end; }
+        .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
         .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; z-index: 10; }
         .login-input-wrap { position: relative; margin-bottom: 14px; }
-        .login-input-wrap input { width: 100%; background: rgba(255,255,255,0.95); border: 2px solid transparent; border-radius: 6px; padding: 12px 14px 12px 44px; font-size: 14px; color: #1a1a2e; outline: none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
-        .login-input-wrap input:focus { border-color: #f39c12; box-shadow: 0 0 0 3px rgba(243,156,18,0.25); }
-        .login-input-wrap .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none; }
-        .login-input-wrap .toggle-pw { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; background: none; border: none; padding: 0; }
-        .btn-signin { width: 100%; background: #27ae60; color: white; font-weight: 800; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; border: none; border-radius: 6px; padding: 14px; cursor: pointer; transition: background 0.2s, transform 0.1s; margin-top: 6px; }
-        .btn-signin:hover { background: #1e8449; }
-        .btn-signin:disabled { background: #7f8c8d; cursor: not-allowed; }
+        .login-input-wrap input { width: 100%; background: rgba(255,255,255,0.95); border: 2px solid transparent; border-radius: 6px; padding: 12px 14px 12px 44px; font-size: 14px; outline: none; box-sizing: border-box; }
+        .login-input-wrap .input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #888; }
+        .login-input-wrap .toggle-pw { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #888; background: none; border: none; }
+        .btn-signin { width: 100%; background: #27ae60; color: white; font-weight: 800; font-size: 13px; text-transform: uppercase; border: none; border-radius: 6px; padding: 14px; cursor: pointer; margin-top: 6px; }
         .login-error { background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.6); color: #fce4e4; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-top: 12px; text-align: center; }
-        .login-divider { width: 200px; height: 2px; background: rgba(255,255,255,0.4); margin: 16px auto; }
 
-        .collapse-content { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; overflow: hidden; }
-
+        /* ==========================================================
+           SETTING PRINT A3 KHUSUS LAPORAN (BUKAN PRINT SCREEN)
+           ========================================================== */
         @media print {
-            .no-print { display: none !important; }
-            .excel-table { font-size: 8pt; }
-            @page { size: landscape; margin: 10mm; }
+            @page { size: A3 landscape; margin: 10mm; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            
+            /* Sembunyikan semua elemen UI */
+            .no-print, header, .z-20 { display: none !important; }
+            
+            /* Bebaskan layout dari sifat Flex/Screen agar bisa memanjang ke bawah utuh */
+            body, html, #root { background-color: white !important; height: auto !important; overflow: visible !important; }
+            .print-flatten { display: block !important; height: auto !important; width: 100% !important; overflow: visible !important; padding: 0 !important; background: white !important;}
+            
+            /* Tabel & Kontainer Tabel */
+            .print-table-container { max-height: none !important; border: none !important; overflow: visible !important; }
+            .excel-table { width: 100% !important; font-size: 11px !important; }
+            .excel-table th, .excel-table td { border: 1px solid #000 !important; font-size: 10px !important; }
+            
+            /* Lepas sticky col agar tidak tumpang tindih saat print */
+            .sticky-col { position: static !important; background-color: transparent !important; }
+            
+            /* Page Break Prevention */
+            .page-break-inside-avoid { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -79,28 +93,20 @@
             const [rows, setRows] = useState([]);
             const [loading, setLoading] = useState(false);
             const [masterSpecs, setMasterSpecs] = useState({});
-            
             const [displayMembers, setDisplayMembers] = useState(Array(10).fill(''));
-            
             const [isFormOpen, setIsFormOpen] = useState(false);
             const [activeTab, setActiveTab] = useState('HEADER'); 
             const [showScanner, setShowScanner] = useState(false);
-
             const [isProsesOpen, setIsProsesOpen] = useState(true);
             const [isDowntimeOpen, setIsDowntimeOpen] = useState(true);
 
             const [formHeader, setFormHeader] = useState({ 
-                tanggal: new Date().toISOString().split('T')[0], 
-                line: user.name, 
-                leader: '', 
-                ot: '', 
-                members: Array(10).fill('') 
+                tanggal: new Date().toISOString().split('T')[0], line: user.name, leader: '', ot: '', members: Array(10).fill('') 
             });
             const [formProses, setFormProses] = useState({
                 process_id: '', ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', 
                 weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', 
-                qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', 
-                prod_keluar: '', line_speed: '', remark: ''
+                qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: ''
             });
             const [formDowntime, setFormDowntime] = useState({
                 tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', 
@@ -130,19 +136,14 @@
                     if (result.success) {
                         setRows(result.data);
                         if(result.specs) setMasterSpecs(result.specs);
-                        
                         let newMembers = Array(10).fill('');
                         if(result.members) {
                             const arr = result.members.split(',').map(m => m.trim());
                             arr.forEach((val, idx) => { if(idx < 10) newMembers[idx] = val; });
                         }
                         setDisplayMembers(newMembers);
-
                         setFormHeader(prev => ({
-                            ...prev,
-                            leader: result.headerInfo && result.headerInfo.leader ? result.headerInfo.leader : '',
-                            ot: result.headerInfo && result.headerInfo.ot ? result.headerInfo.ot : '',
-                            members: newMembers
+                            ...prev, leader: result.headerInfo?.leader || '', ot: result.headerInfo?.ot || '', members: newMembers
                         }));
                     }
                 } catch (e) { console.error("Load failed", e); }
@@ -178,19 +179,10 @@
                         const specName = masterSpecs[specCode] || specCode; 
                         const rawMatSize = parts[2] ? parts[2].trim() : '';
                         const weight = parts[5] ? parts[5].trim() : '';
-
-                        setFormProses(prev => ({
-                            ...prev, ccno: ccno, spec: specName, raw_mat_size: rawMatSize, weight_raw: weight 
-                        }));
+                        setFormProses(prev => ({ ...prev, ccno: ccno, spec: specName, raw_mat_size: rawMatSize, weight_raw: weight }));
                         alert("Data QR Material Berhasil Diekstrak!");
                     } else { alert("Format QR tidak sesuai rule."); }
                 } catch(e) { alert("Error parsing QR: " + e.message); }
-            };
-
-            const handleMemberChange = (index, value) => {
-                const newMembers = [...formHeader.members];
-                newMembers[index] = value;
-                setFormHeader({ ...formHeader, members: newMembers });
             };
 
             const setTimeNow = (field) => {
@@ -203,60 +195,28 @@
 
             const handleEdit = (row) => {
                 setFormProses({
-                    process_id: row.Process_ID || row['Process_ID'] || '',
-                    ccno: row.ccno || row['CC No'] || '',
-                    customer: row.customer || row['Customer'] || '',
-                    spec: row.spec || row['Spec'] || '',
-                    raw_mat_size: row.mc_semi_prod_size || row['Raw Material Size'] || '',
-                    actual_width: row.actual_width_mc || row['Actual Width Raw Material'] || '',
-                    weight_raw: row.weight || row['Weight Raw Material'] || '',
-                    weight_cb: row.weight_coil_back || row['Weight Coil Back'] || '',
-                    product_size: row.product_size || row['Product Size'] || '',
-                    qty_fg: row.qty_fg || row['Qty FG'] || '',
-                    qty_ng: row.qty_ng || row['Qty NG'] || '',
-                    qty_total: row.qty_total || row['Total'] || '', 
-                    total_length: row.total_length || row['Total Length'] || '',
-                    coil_set: formatTime(row.coil_set_lifter || row['Coil Set Lifter']),
-                    start_proc: formatTime(row.start_process || row['Start Proses']),
-                    end_proc: formatTime(row.end_process || row['End Proses']),
-                    prod_keluar: formatTime(row.produk_keluar_mesin || row['Product Keluar dari Mesin']),
-                    line_speed: row.line_speed || row['Line Speed'] || '',
-                    remark: row.remark || row['Remark'] || ''
+                    process_id: row.Process_ID || row['Process_ID'] || '', ccno: row.ccno || row['CC No'] || '', customer: row.customer || row['Customer'] || '',
+                    spec: row.spec || row['Spec'] || '', raw_mat_size: row.mc_semi_prod_size || row['Raw Material Size'] || '', actual_width: row.actual_width_mc || row['Actual Width Raw Material'] || '',
+                    weight_raw: row.weight || row['Weight Raw Material'] || '', weight_cb: row.weight_coil_back || row['Weight Coil Back'] || '', product_size: row.product_size || row['Product Size'] || '',
+                    qty_fg: row.qty_fg || row['Qty FG'] || '', qty_ng: row.qty_ng || row['Qty NG'] || '', qty_total: row.qty_total || row['Total'] || '', 
+                    total_length: row.total_length || row['Total Length'] || '', coil_set: formatTime(row.coil_set_lifter || row['Coil Set Lifter']), start_proc: formatTime(row.start_process || row['Start Proses']),
+                    end_proc: formatTime(row.end_process || row['End Proses']), prod_keluar: formatTime(row.produk_keluar_mesin || row['Product Keluar dari Mesin']), line_speed: row.line_speed || row['Line Speed'] || '', remark: row.remark || row['Remark'] || ''
                 });
-
                 setFormDowntime({
-                    tbm: row.dt_tbm || row['TBM'] || '',
-                    packing_cb: row.dt_packing_coil_back || row['Packing Coil Back'] || '',
-                    waiting_mc: row.dt_waiting_mc || row['Waiting MC'] || '',
-                    waiting_hagumi: row.dt_waiting_hagumi || row['Waiting Hagumi'] || '',
-                    waiting_crane: row.dt_waiting_crane || row['Waiting Crane'] || '',
-                    hagumi_sep: row.dt_hagumi_separator || row['Hagumi/Separator'] || '',
-                    winder: row.dt_winder_top_end || row['Winder Top/End'] || '',
-                    cleaning: row.dt_cleaning_mesin || row['Cleaning Mesin'] || '',
-                    machine_prob: row.dt_machine_problem || row['Machine Problem'] || '',
-                    other: row.dt_other || row['Other'] || ''
+                    tbm: row.dt_tbm || row['TBM'] || '', packing_cb: row.dt_packing_coil_back || row['Packing Coil Back'] || '', waiting_mc: row.dt_waiting_mc || row['Waiting MC'] || '',
+                    waiting_hagumi: row.dt_waiting_hagumi || row['Waiting Hagumi'] || '', waiting_crane: row.dt_waiting_crane || row['Waiting Crane'] || '', hagumi_sep: row.dt_hagumi_separator || row['Hagumi/Separator'] || '',
+                    winder: row.dt_winder_top_end || row['Winder Top/End'] || '', cleaning: row.dt_cleaning_mesin || row['Cleaning Mesin'] || '', machine_prob: row.dt_machine_problem || row['Machine Problem'] || '', other: row.dt_other || row['Other'] || ''
                 });
-
-                setIsProsesOpen(true);
-                setIsDowntimeOpen(true);
-                setActiveTab('INPUT DATA');
-                setIsFormOpen(true);
+                setIsProsesOpen(true); setIsDowntimeOpen(true); setActiveTab('INPUT DATA'); setIsFormOpen(true);
             };
 
             const handleDelete = async (processId) => {
                 if(!window.confirm("Yakin ingin menghapus data baris ini?")) return;
                 setLoading(true);
                 try {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'deleteData', process_id: processId })
-                    });
+                    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'deleteData', process_id: processId }) });
                     const result = await res.json();
-                    if(result.status === 'success') {
-                        alert(result.message);
-                        loadData(); 
-                    } else { alert("Gagal: " + result.message); }
+                    if(result.status === 'success') { alert(result.message); loadData(); } else { alert("Gagal: " + result.message); }
                 } catch(e) { alert("Error koneksi!"); }
                 setLoading(false);
             };
@@ -264,26 +224,11 @@
             const submitData = async () => {
                 setLoading(true);
                 const combinedMembers = formHeader.members.filter(m => m.trim() !== '').join(', ');
-
-                const payload = { 
-                    action: 'saveData', 
-                    header: { ...formHeader, member: combinedMembers }, 
-                    proses: formProses, 
-                    downtime: formDowntime 
-                };
-
+                const payload = { action: 'saveData', header: { ...formHeader, member: combinedMembers }, proses: formProses, downtime: formDowntime };
                 try {
-                    const res = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify(payload)
-                    });
+                    const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) });
                     const result = await res.json();
-                    if(result.status === 'success') {
-                        alert(result.message || "Data Tersimpan");
-                        setIsFormOpen(false);
-                        loadData(); 
-                    } else { alert("Gagal: " + result.message); }
+                    if(result.status === 'success') { alert(result.message || "Data Tersimpan"); setIsFormOpen(false); loadData(); } else { alert("Gagal: " + result.message); }
                 } catch(e) { alert("Error koneksi!"); }
                 setLoading(false);
             };
@@ -291,53 +236,51 @@
             const openForm = () => {
                 setFormProses({ process_id: '', ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: '' });
                 setFormDowntime({ tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', hagumi_sep: '', winder: '', cleaning: '', machine_prob: '', other: '' });
-                setIsProsesOpen(true);
-                setIsDowntimeOpen(true);
-                setIsFormOpen(true);
-                setActiveTab('HEADER');
+                setIsProsesOpen(true); setIsDowntimeOpen(true); setIsFormOpen(true); setActiveTab('HEADER');
             };
 
             const inputStyle = "w-full border border-gray-300 p-2 rounded text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none";
             const labelStyle = "block text-xs font-bold text-gray-700 mb-1 mt-3 uppercase";
             
-            // --- GAYA KHUSUS KOLOM DOWNTIME ---
-            // Lebar 45px (sekitar 7 karakter), word-break agar wrap ke bawah, font-size kecil (10px) agar rapi
-            const dtHeaderStyle = "bg-blue-50 text-center leading-tight px-1 py-1";
-            const dtWidth = { 
-                width: '45px', 
-                minWidth: '45px', 
-                maxWidth: '45px', 
-                whiteSpace: 'normal',   // Mengizinkan wrap text
-                wordWrap: 'break-word', // Memaksa patah kata jika kepanjangan
-                fontSize: '10px'        // Font sedikit dikecilkan
+            // --- GAYA LEBAR KOLOM UNTUK TABEL (Meniru tampilan padat Excel) ---
+            // Menggunakan objek style agar presisi, teks otomatis word-wrap karena kelas excel-table td
+            const colStyle = {
+                aksi: { width: '40px' }, no: { width: '25px' }, ccno: { width: '80px' }, cust: { width: '70px' },
+                spec: { width: '60px' }, size: { width: '60px' }, actual: { width: '45px' }, weight: { width: '45px' },
+                prodSize: { width: '70px' }, qty: { width: '35px' }, length: { width: '45px' },
+                time: { width: '40px' }, lineSpeed: { width: '40px' }, remark: { width: 'auto', minWidth: '90px' }
             };
 
+            // Downtime khusus: Lebar 40px, font lebih kecil, dipaksa melipat ke bawah
+            const dtHeaderStyle = "bg-blue-50 text-center px-1 leading-tight";
+            const dtWidth = { width: '38px', whiteSpace: 'normal', wordWrap: 'break-word', fontSize: '9px' };
+
             return (
-                <div className="bg-white rounded-lg shadow-lg border border-black flex flex-col p-2 min-h-screen relative">
+                <div className="bg-white rounded shadow-lg border border-gray-300 flex flex-col p-2 print-flatten">
                     
-                    {/* Header Controls */}
+                    {/* Header Controls (Navigasi Sejajar) - Disembunyikan saat print */}
                     <div className="bg-white p-2 border-b-2 border-gray-800 flex flex-wrap items-center justify-between no-print mb-2 gap-2">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
                                 <label className="text-xs font-bold uppercase whitespace-nowrap">Tanggal</label>
-                                <input type="date" className="border border-gray-300 p-1.5 rounded text-sm w-36 font-bold focus:border-blue-500 outline-none" value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} />
+                                <input type="date" className="border border-gray-300 p-1 rounded text-sm w-36 focus:border-blue-500 outline-none" value={formHeader.tanggal} onChange={e => setFormHeader({...formHeader, tanggal: e.target.value})} />
                             </div>
                             <div className="flex items-center gap-2">
                                 <label className="text-xs font-bold uppercase whitespace-nowrap">Line</label>
-                                <input type="text" readOnly className="border border-gray-300 p-1.5 rounded text-sm w-24 bg-gray-100 font-bold text-center outline-none" value={formHeader.line} />
+                                <input type="text" readOnly className="border border-gray-300 p-1 rounded text-sm w-20 bg-gray-100 text-center outline-none" value={formHeader.line} />
                             </div>
-                            <button onClick={loadData} title="Refresh Data" className="bg-blue-100 text-blue-700 p-1.5 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
+                            <button onClick={loadData} title="Refresh Data" className="bg-blue-100 text-blue-700 p-1 rounded hover:bg-blue-200 transition"><IconDashboard /></button>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                            <button onClick={openForm} className="bg-green-600 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
-                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-4 py-1.5 rounded font-bold text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
+                            <button onClick={openForm} className="bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center gap-2 hover:bg-green-700 shadow-sm uppercase">+ Input Data</button>
+                            <button onClick={() => window.print()} className="bg-gray-800 text-white px-3 py-1 rounded text-xs flex items-center gap-2 hover:bg-gray-900 shadow-sm uppercase">Print</button>
                         </div>
                     </div>
 
                     {/* MODAL FORM INPUT */}
                     {isFormOpen && (
-                        <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4">
+                        <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4 no-print">
                             <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
                                 <div className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center rounded-t-lg">
                                     <h2 className="text-lg font-bold uppercase tracking-wider">{formProses.process_id ? 'Edit Data Production' : 'Input Data Production'}</h2>
@@ -361,7 +304,6 @@
                                                 <div><label className={labelStyle}>Leader</label><input type="text" className={inputStyle} value={formHeader.leader} onChange={e => setFormHeader({...formHeader, leader: e.target.value})} /></div>
                                                 <div><label className={labelStyle}>OT (Jam)</label><input type="text" className={inputStyle} value={formHeader.ot} onChange={e => setFormHeader({...formHeader, ot: e.target.value})} /></div>
                                             </div>
-                                            
                                             <div className="mt-4 border-t pt-4">
                                                 <label className="block text-xs font-black text-blue-700 uppercase mb-2">Input Member (10 Orang)</label>
                                                 <div className="grid grid-cols-2 gap-2">
@@ -474,44 +416,44 @@
                         </div>
                     )}
 
-                    {/* Print Header */}
+                    {/* Print Header Tampil Eksklusif Saat di Print */}
                     <div className="hidden print:flex w-full justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
-                        <div className="w-1/3 text-lg font-bold">Tanggal : <span className="border-b border-black min-w-[150px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
-                        <div className="w-1/3 text-center"><h1 className="text-3xl font-black tracking-widest uppercase">PRODUCTION REPORT</h1></div>
-                        <div className="w-1/3 flex justify-end gap-4 font-bold">
-                            <div className="border-2 border-black p-2 min-w-[80px] text-center"><div className="text-[10px]">LINE</div><div>{formHeader.line}</div></div>
-                            <div className="border-2 border-black p-2 min-w-[80px] text-center flex items-center justify-center"><span className="mr-2 text-[10px]">OT</span> <span className="border-b border-black w-10"></span></div>
+                        <div className="w-1/3 text-sm font-bold">Tanggal : <span className="border-b border-black min-w-[120px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
+                        <div className="w-1/3 text-center"><h1 className="text-2xl font-black tracking-widest uppercase m-0 p-0 line-height-1">PRODUCTION REPORT</h1></div>
+                        <div className="w-1/3 flex justify-end gap-2 font-bold text-xs">
+                            <div className="border border-black p-1 min-w-[60px] text-center"><div className="text-[9px]">LINE</div><div>{formHeader.line}</div></div>
+                            <div className="border border-black p-1 min-w-[60px] text-center flex items-center justify-center"><span className="mr-1 text-[9px]">OT</span> <span className="border-b border-black w-8"></span></div>
                         </div>
                     </div>
 
                     {/* Main Excel Table */}
-                    <div className="overflow-x-auto overflow-y-auto border border-black" style={{ maxHeight: '70vh' }}>
-                        <table className="excel-table">
+                    <div className="overflow-x-auto overflow-y-auto print-table-container hide-scrollbar" style={{ maxHeight: '72vh' }}>
+                        <table className="excel-table w-full">
                             <thead>
                                 <tr>
-                                    <th rowSpan="2" className="sticky-col no-print bg-white">Aksi</th>
-                                    <th rowSpan="2" className="w-10">NO</th>
-                                    <th rowSpan="2" className="w-32">CC NO</th>
-                                    <th rowSpan="2" className="w-32">Customer</th>
-                                    <th rowSpan="2" className="w-24">Spec</th>
-                                    <th rowSpan="2" className="w-32">MC/Semi Size</th>
-                                    <th rowSpan="2" className="w-24">Actual Width</th>
-                                    <th rowSpan="2" className="w-20">Weight</th>
-                                    <th rowSpan="2" className="w-32">Product Size</th>
-                                    <th rowSpan="2" className="w-16">Qty FG</th>
-                                    <th rowSpan="2" className="w-16">Qty NG</th>
-                                    <th rowSpan="2" className="w-20">Qty Total</th>
-                                    <th rowSpan="2" className="w-24">Total Length</th>
-                                    <th rowSpan="2" className="w-20">Coil Set</th>
-                                    <th rowSpan="2" className="w-20">Start</th>
-                                    <th rowSpan="2" className="w-20">End</th>
-                                    <th rowSpan="2" className="w-24">Produk Keluar</th>
-                                    <th colSpan="10" className="bg-blue-100 uppercase">Down Time (Minutes)</th>
-                                    <th rowSpan="2" className="w-24">Line Speed</th>
-                                    <th rowSpan="2" className="w-48">Remark</th>
+                                    <th rowSpan="2" className="sticky-col no-print bg-white" style={colStyle.aksi}>Aksi</th>
+                                    <th rowSpan="2" style={colStyle.no}>NO</th>
+                                    <th rowSpan="2" style={colStyle.ccno}>CC NO</th>
+                                    <th rowSpan="2" style={colStyle.cust}>Customer</th>
+                                    <th rowSpan="2" style={colStyle.spec}>Spec</th>
+                                    <th rowSpan="2" style={colStyle.size}>MC/Semi Size</th>
+                                    <th rowSpan="2" style={colStyle.actual}>Actual Width</th>
+                                    <th rowSpan="2" style={colStyle.weight}>Weight</th>
+                                    <th rowSpan="2" style={colStyle.prodSize}>Product Size</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty FG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty NG</th>
+                                    <th rowSpan="2" style={colStyle.qty}>Qty Total</th>
+                                    <th rowSpan="2" style={colStyle.length}>Total Length</th>
+                                    <th rowSpan="2" style={colStyle.time}>Coil Set</th>
+                                    <th rowSpan="2" style={colStyle.time}>Start</th>
+                                    <th rowSpan="2" style={colStyle.time}>End</th>
+                                    <th rowSpan="2" style={colStyle.time}>Produk Keluar</th>
+                                    <th colSpan="10" className="bg-blue-100 uppercase" style={{fontSize: '11px'}}>Down Time (Minutes)</th>
+                                    <th rowSpan="2" style={colStyle.lineSpeed}>Line Speed</th>
+                                    <th rowSpan="2" style={colStyle.remark}>Remark</th>
                                 </tr>
                                 <tr>
-                                    {/* DI SINI LETAK PERUBAHAN LEBAR KOLOM DOWNTIME (45px & WRAP) */}
+                                    {/* Kolom Downtime Lebar 38px, Font Kecil, Teks Turun ke Bawah */}
                                     <th className={dtHeaderStyle} style={dtWidth}>TBM</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Packing</th>
                                     <th className={dtHeaderStyle} style={dtWidth}>Wait MC</th>
@@ -526,11 +468,11 @@
                             </thead>
                             <tbody>
                                 {rows.length === 0 ? (
-                                    <tr><td colSpan="28" className="p-8 text-gray-400 italic font-bold">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
+                                    <tr><td colSpan="28" className="p-4 text-gray-400 italic">BELUM ADA DATA UNTUK TANGGAL INI</td></tr>
                                 ) : rows.map((r, i) => (
                                     <tr key={i}>
                                         <td className="sticky-col no-print bg-white">
-                                            <div className="flex gap-3 justify-center">
+                                            <div className="flex gap-2 justify-center">
                                                 <button onClick={() => handleEdit(r)} className="text-blue-600 hover:text-blue-800 font-bold" title="Edit Data">✎</button>
                                                 <button onClick={() => handleDelete(r.Process_ID || r['Process_ID'])} className="text-red-600 hover:text-red-800 font-bold" title="Hapus Data">🗑</button>
                                             </div>
@@ -548,10 +490,10 @@
                                         <td className="font-bold bg-gray-100">{r.qty_total || r['Total'] || ''}</td>
                                         <td>{r.total_length || r['Total Length'] || ''}</td>
                                         
-                                        <td className="font-bold text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
-                                        <td className="font-bold text-green-900 bg-green-50/50">{formatTime(r.start_process || r['Start Proses'])}</td>
-                                        <td className="font-bold text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
-                                        <td className="font-bold text-gray-900 bg-gray-50/50">{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
+                                        <td className="text-blue-900 bg-blue-50/50">{formatTime(r.coil_set_lifter || r['Coil Set Lifter'])}</td>
+                                        <td className="text-green-900 bg-green-50/50">{formatTime(r.start_process || r['Start Proses'])}</td>
+                                        <td className="text-red-900 bg-red-50/50">{formatTime(r.end_process || r['End Proses'])}</td>
+                                        <td className="text-gray-900 bg-gray-50/50">{formatTime(r.produk_keluar_mesin || r['Product Keluar dari Mesin'])}</td>
 
                                         <td className="bg-blue-50/30">{r.dt_tbm || r['TBM'] || ''}</td>
                                         <td className="bg-blue-50/30">{r.dt_packing_coil_back || r['Packing Coil Back'] || ''}</td>
@@ -564,7 +506,7 @@
                                         <td className="bg-blue-50/30">{r.dt_machine_problem || r['Machine Problem'] || ''}</td>
                                         <td className="bg-blue-50/30">{r.dt_other || r['Other'] || ''}</td>
                                         <td>{r.line_speed || r['Line Speed'] || ''}</td>
-                                        <td className="text-left">{r.remark || r['Remark'] || ''}</td>
+                                        <td className="text-left" style={{textAlign: 'left'}}>{r.remark || r['Remark'] || ''}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -572,41 +514,41 @@
                     </div>
 
                     {/* Footer Area - LINE MEMBER */}
-                    <div className="mt-4 border border-black text-[10px] flex flex-wrap" style={{ pageBreakInside: 'avoid' }}>
-                        <div className="w-1/4 border-r border-black p-2">
-                            <div className="font-bold mb-1 uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
+                    <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
+                        <div className="w-1/4 border-r border-black p-1">
+                            <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
                             <table className="w-full border-collapse border border-black text-center">
                                 <tbody>
                                     {[0, 1, 2, 3, 4].map(i => (
                                         <tr key={i}>
-                                            <td className="border border-black w-6 bg-gray-50 font-bold">{i + 1}</td>
-                                            <td className="border border-black h-5 text-left px-1">{displayMembers[i]}</td>
-                                            <td className="border border-black w-6 bg-gray-50 font-bold">{i + 6}</td>
-                                            <td className="border border-black h-5 text-left px-1">{displayMembers[i + 5]}</td>
+                                            <td className="border border-black w-5 bg-gray-50">{i + 1}</td>
+                                            <td className="border border-black h-4 text-left px-1">{displayMembers[i]}</td>
+                                            <td className="border border-black w-5 bg-gray-50">{i + 6}</td>
+                                            <td className="border border-black h-4 text-left px-1">{displayMembers[i + 5]}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-                        <div className="w-1/4 border-r border-black p-2 flex flex-col justify-end">
-                            <div className="text-right font-bold mb-2 uppercase">Total Proses</div>
+                        <div className="w-1/4 border-r border-black p-1 flex flex-col justify-end">
+                            <div className="text-right font-bold uppercase mb-1">Total Proses</div>
                             <table className="w-full border-collapse border border-black">
                                 <tbody>
-                                    <tr><td className="border border-black p-1 bg-gray-50 uppercase">Coil / Skid</td><td className="border border-black p-1 text-center font-bold">{totals.coil}</td></tr>
-                                    <tr><td className="border border-black p-1 bg-gray-50 uppercase">Berat</td><td className="border border-black p-1 text-center font-bold">{totals.berat}</td></tr>
+                                    <tr><td className="border border-black p-0.5 bg-gray-50 uppercase">Coil / Skid</td><td className="border border-black p-0.5 text-center font-bold">{totals.coil}</td></tr>
+                                    <tr><td className="border border-black p-0.5 bg-gray-50 uppercase">Berat</td><td className="border border-black p-0.5 text-center font-bold">{totals.berat}</td></tr>
                                 </tbody>
                             </table>
                         </div>
-                        <div className="w-2/5 border-r border-black p-2 bg-pink-100/50">
-                            <div className="font-bold mb-1 uppercase">Definisi • Rule</div>
-                            <p>• Coil set: Memasukkan Coil ke Drum (Persiapan, Visual cek, Scan).</p>
-                            <p>• Start Process: Setelah bagian top coil ditarik recoiler / Running Otomatis.</p>
-                            <p>• End Process: Setelah produk terlepas dari drum / Potongan terakhir.</p>
-                            <p>• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
+                        <div className="w-2/5 border-r border-black p-1.5 bg-pink-50/50">
+                            <div className="font-bold uppercase mb-0.5">Definisi • Rule</div>
+                            <p className="mb-0 leading-tight">• Coil set: Memasukkan Coil ke Drum (Persiapan, Visual cek, Scan).</p>
+                            <p className="mb-0 leading-tight">• Start Process: Setelah bagian top coil ditarik recoiler / Running Otomatis.</p>
+                            <p className="mb-0 leading-tight">• End Process: Setelah produk terlepas dari drum / Potongan terakhir.</p>
+                            <p className="mb-0 leading-tight">• Down Time: Wajib diisi setiap kolom jika terjadi loss time.</p>
                         </div>
-                        <div className="flex-1 p-2 flex flex-col">
+                        <div className="flex-1 p-1 flex flex-col">
                             <div className="border border-black flex-1 flex flex-col">
-                                <div className="text-center border-b border-black py-1 uppercase">Cek Leader</div>
+                                <div className="text-center border-b border-black py-0.5 uppercase font-bold">Cek Leader</div>
                             </div>
                         </div>
                     </div>
@@ -625,10 +567,7 @@
             const [error, setError] = useState('');
 
             const handleLogin = async () => {
-                if (!username.trim() || !password.trim()) {
-                    setError('Username dan Password wajib diisi.');
-                    return;
-                }
+                if (!username.trim() || !password.trim()) { setError('Username dan Password wajib diisi.'); return; }
                 setLoading(true); setError('');
 
                 const tryJSONP = () => new Promise((resolve, reject) => {
@@ -705,8 +644,8 @@
             if (!user) return <LoginPage onLogin={(u) => setUser(u)} />;
 
             return (
-                <div className="flex h-screen bg-[#f4f6f9] overflow-hidden">
-                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'}`}>
+                <div className="flex h-screen bg-[#f4f6f9] overflow-hidden print-flatten">
+                    <div className={`bg-[#2c323a] text-[#aab3bc] transition-all duration-300 flex flex-col shadow-xl z-20 ${isSidebarOpen ? 'w-64' : 'w-20'} no-print`}>
                         <div className="h-[60px] bg-[#22272e] flex items-center justify-center border-b border-[#1e2228]">{isSidebarOpen ? <span className="font-bold text-xl text-white tracking-widest uppercase">HSSI <span className="text-blue-500">SYSTEM</span></span> : <span className="text-blue-500 font-bold">HS</span>}</div>
                         <div className="flex-1 overflow-y-auto py-6">
                             <ul className="space-y-1">
@@ -717,7 +656,7 @@
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col overflow-hidden relative">
+                    <div className="flex-1 flex flex-col overflow-hidden relative print-flatten">
                         <header className="h-[60px] bg-[#a84444] shadow-md flex items-center px-4 z-10 gap-4 no-print justify-between">
                             <div className="flex items-center gap-4"><button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-white p-2 hover:bg-[#913b3b] rounded transition-colors"><IconMenu /></button><h1 className="text-lg font-bold text-white uppercase tracking-wider">{menus.find(m => m.id === activeMenu)?.title}</h1></div>
                             <div className="flex items-center gap-3">
@@ -725,8 +664,8 @@
                                 <button onClick={() => { if(window.confirm('Yakin ingin logout?')) setUser(null); }} className="text-white p-2 hover:bg-[#913b3b] rounded"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></button>
                             </div>
                         </header>
-                        <main className="flex-1 overflow-auto p-4 sm:p-6 bg-[#f4f6f9]">
-                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600"><h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">Module Under Development</h2></div>}
+                        <main className="flex-1 overflow-auto p-3 bg-[#f4f6f9] print-flatten">
+                            {activeMenu === 'menu1' ? <ProductionReportModule user={user} /> : <div className="p-20 text-center bg-white rounded shadow-lg border-t-4 border-blue-600 no-print"><h2 className="text-3xl font-black text-gray-300 uppercase italic tracking-tighter">Module Under Development</h2></div>}
                         </main>
                     </div>
                 </div>
