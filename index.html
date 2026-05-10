@@ -44,7 +44,6 @@
         .login-error { background: rgba(231,76,60,0.2); border: 1px solid rgba(231,76,60,0.6); color: #fce4e4; border-radius: 6px; padding: 10px 14px; font-size: 13px; margin-top: 12px; text-align: center; }
         .login-divider { width: 200px; height: 2px; background: rgba(255,255,255,0.4); margin: 16px auto; }
 
-        /* Animasi Collapse Form */
         .collapse-content { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; overflow: hidden; }
 
         @media print {
@@ -87,11 +86,9 @@
             const [activeTab, setActiveTab] = useState('HEADER'); 
             const [showScanner, setShowScanner] = useState(false);
 
-            // State Accordion untuk Form Gabungan Proses & Downtime
             const [isProsesOpen, setIsProsesOpen] = useState(true);
             const [isDowntimeOpen, setIsDowntimeOpen] = useState(true);
 
-            // Form States
             const [formHeader, setFormHeader] = useState({ 
                 tanggal: new Date().toISOString().split('T')[0], 
                 line: user.name, 
@@ -114,7 +111,6 @@
 
             useEffect(() => {
                 let html5QrcodeScanner;
-                // QR Scanner hanya di render jika tab INPUT DATA aktif dan isProsesOpen aktif
                 if (showScanner && activeTab === 'INPUT DATA' && isProsesOpen) {
                     html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} });
                     html5QrcodeScanner.render((decodedText) => {
@@ -190,6 +186,15 @@
                 setFormHeader({ ...formHeader, members: newMembers });
             };
 
+            // FUNGSI BARU: Set Waktu Saat Ini
+            const setTimeNow = (field) => {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+                setFormProses(prev => ({ ...prev, [field]: timeString }));
+            };
+
             const submitData = async () => {
                 setLoading(true);
                 const combinedMembers = formHeader.members
@@ -220,11 +225,9 @@
             };
 
             const openForm = () => {
-                // Bersihkan proses & downtime
                 setFormProses({ ccno: '', customer: '', spec: '', raw_mat_size: '', actual_width: '', weight_raw: '', weight_cb: '', product_size: '', qty_fg: '', qty_ng: '', qty_total: '', total_length: '', coil_set: '', start_proc: '', end_proc: '', prod_keluar: '', line_speed: '', remark: '' });
                 setFormDowntime({ tbm: '', packing_cb: '', waiting_mc: '', waiting_hagumi: '', waiting_crane: '', hagumi_sep: '', winder: '', cleaning: '', machine_prob: '', other: '' });
                 
-                // Pastikan accordion terbuka saat form baru dibuka
                 setIsProsesOpen(true);
                 setIsDowntimeOpen(true);
                 
@@ -265,7 +268,6 @@
                                     <button onClick={() => setIsFormOpen(false)} className="text-white hover:text-red-400 text-2xl font-bold">&times;</button>
                                 </div>
                                 
-                                {/* TABS NAVIGATION (SEKARANG HANYA 2 TABS) */}
                                 <div className="flex border-b bg-gray-100">
                                     {['HEADER', 'INPUT DATA'].map(tab => (
                                         <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 text-sm font-bold uppercase tracking-wider ${activeTab === tab ? 'bg-white border-t-4 border-blue-600 text-blue-700' : 'text-gray-500 hover:bg-gray-200'}`}>
@@ -286,20 +288,13 @@
                                                 <div><label className={labelStyle}>OT (Jam)</label><input type="text" className={inputStyle} value={formHeader.ot} onChange={e => setFormHeader({...formHeader, ot: e.target.value})} /></div>
                                             </div>
                                             
-                                            {/* 10 KOLOM INPUT MEMBER */}
                                             <div className="mt-4 border-t pt-4">
                                                 <label className="block text-xs font-black text-blue-700 uppercase mb-2">Input Member (10 Orang)</label>
                                                 <div className="grid grid-cols-2 gap-2">
                                                     {formHeader.members.map((m, idx) => (
                                                         <div key={idx} className="flex items-center gap-2">
                                                             <span className="text-[10px] font-bold w-4">{idx + 1}.</span>
-                                                            <input 
-                                                                type="text" 
-                                                                className={inputStyle} 
-                                                                placeholder={`Nama Member ${idx + 1}`}
-                                                                value={m} 
-                                                                onChange={e => handleMemberChange(idx, e.target.value)} 
-                                                            />
+                                                            <input type="text" className={inputStyle} placeholder={`Nama Member ${idx + 1}`} value={m} onChange={e => handleMemberChange(idx, e.target.value)} />
                                                         </div>
                                                     ))}
                                                 </div>
@@ -311,7 +306,7 @@
                                     {activeTab === 'INPUT DATA' && (
                                         <div>
                                             
-                                            {/* --- ACCORDION BAGIAN PROSES --- */}
+                                            {/* ACCORDION BAGIAN PROSES */}
                                             <div 
                                                 className="flex justify-between items-center bg-blue-50 border border-blue-200 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition shadow-sm mb-2"
                                                 onClick={() => setIsProsesOpen(!isProsesOpen)}
@@ -327,7 +322,7 @@
                                                 <div className="mb-6 px-2 animate-fade-in">
                                                     <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center">
                                                         <div className="text-sm font-bold text-yellow-800">Scan QR untuk Auto-Fill Material Data</div>
-                                                        <button onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner' : 'Buka Scanner'}</button>
+                                                        <button type="button" onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner' : 'Buka Scanner'}</button>
                                                     </div>
                                                     {showScanner && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2 rounded"></div>}
 
@@ -344,24 +339,49 @@
                                                         <div><label className={labelStyle}>Qty NG</label><input type="number" className={inputStyle} value={formProses.qty_ng} onChange={e => setFormProses({...formProses, qty_ng: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Qty Total</label><input type="number" className={inputStyle} value={formProses.qty_total} onChange={e => setFormProses({...formProses, qty_total: e.target.value})} /></div>
                                                         <div><label className={labelStyle}>Total Length</label><input type="text" className={inputStyle} value={formProses.total_length} onChange={e => setFormProses({...formProses, total_length: e.target.value})} /></div>
-                                                        <div><label className={labelStyle}>Coil Set Lifter</label><input type="time" className={inputStyle} value={formProses.coil_set} onChange={e => setFormProses({...formProses, coil_set: e.target.value})} /></div>
-                                                        <div><label className={labelStyle}>Start Proses</label><input type="time" className={inputStyle} value={formProses.start_proc} onChange={e => setFormProses({...formProses, start_proc: e.target.value})} /></div>
-                                                        <div><label className={labelStyle}>End Proses</label><input type="time" className={inputStyle} value={formProses.end_proc} onChange={e => setFormProses({...formProses, end_proc: e.target.value})} /></div>
-                                                        <div><label className={labelStyle}>Produk Keluar</label><input type="time" className={inputStyle} value={formProses.prod_keluar} onChange={e => setFormProses({...formProses, prod_keluar: e.target.value})} /></div>
+                                                        
+                                                        {/* --- MODIFIKASI INPUT WAKTU DENGAN TOMBOL 'NOW' --- */}
+                                                        <div>
+                                                            <label className={labelStyle}>Coil Set Lifter</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.coil_set} onChange={e => setFormProses({...formProses, coil_set: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('coil_set')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>Start Proses</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.start_proc} onChange={e => setFormProses({...formProses, start_proc: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('start_proc')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>End Proses</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.end_proc} onChange={e => setFormProses({...formProses, end_proc: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('end_proc')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <label className={labelStyle}>Produk Keluar</label>
+                                                            <div className="flex gap-1">
+                                                                <input type="time" className={inputStyle} value={formProses.prod_keluar} onChange={e => setFormProses({...formProses, prod_keluar: e.target.value})} />
+                                                                <button type="button" onClick={() => setTimeNow('prod_keluar')} className="bg-blue-100 text-blue-700 px-3 rounded border border-blue-300 hover:bg-blue-200 font-bold text-xs whitespace-nowrap">NOW</button>
+                                                            </div>
+                                                        </div>
+                                                        {/* ------------------------------------------------ */}
+
                                                         <div><label className={labelStyle}>Line Speed</label><input type="text" className={inputStyle} value={formProses.line_speed} onChange={e => setFormProses({...formProses, line_speed: e.target.value})} /></div>
-                                                        <div className="col-span-3"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
+                                                        <div className="col-span-2"><label className={labelStyle}>Remark</label><input type="text" className={inputStyle} value={formProses.remark} onChange={e => setFormProses({...formProses, remark: e.target.value})} /></div>
                                                     </div>
                                                 </div>
                                             )}
 
-                                            {/* PEMISAH GARIS */}
                                             <div className="relative my-6">
-                                                <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                                    <div className="w-full border-t-2 border-dashed border-gray-300"></div>
-                                                </div>
+                                                <div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div>
                                             </div>
 
-                                            {/* --- ACCORDION BAGIAN DOWNTIME --- */}
+                                            {/* ACCORDION BAGIAN DOWNTIME */}
                                             <div 
                                                 className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2"
                                                 onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}
@@ -579,7 +599,7 @@
                 <div className="login-bg">
                     <div className="login-left">
                         <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
-                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level</h2>
+                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />versi 1<br />company to the<br />next level</h2>
                     </div>
                     <div className="login-card">
                         <div style={{ textAlign: 'center', marginBottom: '28px' }}><h1 style={{ color: 'white', fontSize: '18px', fontWeight: '900', letterSpacing: '1px', lineHeight: 1.3, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>PT HANWA STEEL SERVICE<br />INDONESIA</h1><div className="login-divider" style={{ margin: '14px auto' }}></div><p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: '500' }}>Sign in to your account</p></div>
