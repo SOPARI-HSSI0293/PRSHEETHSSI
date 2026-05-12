@@ -18,6 +18,7 @@
         .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
         
+        /* Fix Sticky Header overlap & Downtime Alignment */
         .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
         .excel-table thead tr:first-child th { height: 24px; } 
         .excel-table thead tr:nth-child(2) th { top: 24px; background-color: #e0f2fe; } 
@@ -28,9 +29,10 @@
 
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
+
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; }
         
+        /* Login Styles */
         .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; display: flex; align-items: center; justify-content: flex-end; }
         .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
         .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; z-index: 10; }
@@ -98,6 +100,20 @@
 
             useEffect(() => { loadData(); }, [formHeader.tanggal]);
 
+            // ==============================================================================
+            // FUNGSI RECEIVER: Menunggu suntikan data dari Android MIT App Inventor
+            // ==============================================================================
+            useEffect(() => {
+                // Menerima data yang dilempar dari App Inventor
+                window.terimaDataScan = (hasilScanAndroid) => {
+                    if (hasilScanAndroid && hasilScanAndroid !== "") {
+                        handleQrScan(hasilScanAndroid);
+                    }
+                };
+                return () => { delete window.terimaDataScan; };
+            }, [masterSpecs]);
+
+            // Scanner Web (Untuk PC/Browser biasa)
             useEffect(() => {
                 let html5QrcodeScanner;
                 if (showScanner && activeTab === 'INPUT DATA' && isProsesOpen) {
@@ -110,21 +126,6 @@
                 }
                 return () => { if(html5QrcodeScanner) html5QrcodeScanner.clear().catch(e => console.log(e)); };
             }, [showScanner, activeTab, isProsesOpen]);
-
-            // ==============================================================================
-            // FUNGSI BARU (ANTI-ERROR): Menunggu suntikan data dari App Inventor
-            // ==============================================================================
-            useEffect(() => {
-                // Membuat fungsi global yang bisa dipanggil dari luar (dari Android)
-                window.terimaDataScan = (hasilScanAndroid) => {
-                    if (hasilScanAndroid && hasilScanAndroid !== "") {
-                        handleQrScan(hasilScanAndroid);
-                    }
-                };
-                return () => {
-                    delete window.terimaDataScan; // Bersihkan jika halaman ditutup
-                };
-            }, [masterSpecs]); // Butuh masterSpecs agar mapping spek tetap jalan
 
             const loadData = async () => {
                 setLoading(true);
@@ -178,7 +179,7 @@
                         const rawMatSize = parts[2] ? parts[2].trim() : '';
                         const weight = parts[5] ? parts[5].trim() : '';
                         setFormProses(prev => ({ ...prev, ccno: ccno, spec: specName, raw_mat_size: rawMatSize, weight_raw: weight }));
-                        alert("Data QR Berhasil Dimasukkan!");
+                        alert("Data QR Berhasil Diekstrak!");
                     } else { alert("Format QR tidak sesuai rule."); }
                 } catch(e) { alert("Error parsing QR: " + e.message); }
             };
@@ -270,6 +271,7 @@
             return (
                 <div className="bg-white rounded shadow-lg border border-gray-300 flex flex-col p-2 print-flatten">
                     
+                    {/* Header Controls (Navigasi Sejajar) */}
                     <div className="bg-white p-2 border-b-2 border-gray-800 flex flex-wrap items-center justify-between no-print mb-2 gap-2">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
@@ -289,6 +291,7 @@
                         </div>
                     </div>
 
+                    {/* MODAL FORM INPUT */}
                     {isFormOpen && (
                         <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4 no-print">
                             <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
@@ -339,11 +342,28 @@
 
                                             {isProsesOpen && (
                                                 <div className="mb-6 px-2 animate-fade-in">
-                                                    <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center">
-                                                        <div className="text-sm font-bold text-yellow-800">Gunakan Tombol Scan di Aplikasi (Bawah) untuk Input Material</div>
-                                                        <button type="button" onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner Web' : 'Buka Scanner Web'}</button>
+                                                    
+                                                    {/* TOMBOL SCANNER HYBRID (WEB & APP INVENTOR) */}
+                                                    <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center shadow-sm">
+                                                        <div className="text-sm font-bold text-yellow-800">Klik tombol di bawah untuk Scan QR Code Material</div>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => {
+                                                                if (window.AppInventor) {
+                                                                    // Jika di aplikasi Android, panggil kamera Android (Scanner App Inventor)
+                                                                    window.AppInventor.setWebViewString("BUKA_SCANNER");
+                                                                } else {
+                                                                    // Jika di web/PC, buka scanner HTML5 biasa
+                                                                    setShowScanner(!showScanner);
+                                                                }
+                                                            }} 
+                                                            className="bg-yellow-500 text-white px-6 py-2 rounded text-xs font-black uppercase hover:bg-yellow-600 shadow-md animate-pulse"
+                                                        >
+                                                            {showScanner ? 'Tutup Scanner' : '📷 BUKA SCANNER'}
+                                                        </button>
                                                     </div>
-                                                    {showScanner && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2 rounded"></div>}
+
+                                                    {showScanner && !window.AppInventor && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2 rounded"></div>}
 
                                                     <div className="grid grid-cols-3 gap-4">
                                                         <div><label className={labelStyle}>CC No (QR)</label><input type="text" className={inputStyle} value={formProses.ccno} onChange={e => setFormProses({...formProses, ccno: e.target.value})} /></div>
@@ -398,6 +418,7 @@
 
                                             <div className="relative my-6"><div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div></div>
 
+                                            {/* ACCORDION BAGIAN DOWNTIME */}
                                             <div className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2" onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}>
                                                 <h3 className="font-bold text-red-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Data Downtime (Loss Time)</h3>
                                                 <span className="text-red-800">{isDowntimeOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
@@ -429,6 +450,7 @@
                         </div>
                     )}
 
+                    {/* Print Header Tampil Eksklusif Saat di Print */}
                     <div className="hidden print:flex w-full justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
                         <div className="w-1/3 text-sm font-bold">Tanggal : <span className="border-b border-black min-w-[120px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
                         <div className="w-1/3 text-center"><h1 className="text-2xl font-black tracking-widest uppercase m-0 p-0 line-height-1">PRODUCTION REPORT</h1></div>
@@ -441,6 +463,7 @@
                         </div>
                     </div>
 
+                    {/* Main Excel Table */}
                     <div className="overflow-x-auto overflow-y-auto print-table-container hide-scrollbar" style={{ maxHeight: '72vh' }}>
                         <table className="excel-table w-full">
                             <thead>
@@ -526,6 +549,7 @@
                         </table>
                     </div>
 
+                    {/* Footer Area - LINE MEMBER */}
                     <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
                         <div className="w-1/4 border-r border-black p-1">
                             <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
@@ -572,6 +596,9 @@
             );
         };
 
+        // =====================================================================
+        // KOMPONEN: LOGIN PAGE
+        // =====================================================================
         const LoginPage = ({ onLogin }) => {
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
@@ -622,7 +649,7 @@
             return (
                 <div className="login-bg">
                     <div className="login-left">
-                        <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
+                        <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justify-content: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
                         <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level</h2>
                     </div>
                     <div className="login-card">
@@ -638,6 +665,9 @@
             );
         };
 
+        // =====================================================================
+        // KOMPONEN: MAIN LAYOUT
+        // =====================================================================
         const App = () => {
             const [user, setUser] = useState(null);
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
