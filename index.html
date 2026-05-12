@@ -15,11 +15,9 @@
         body { font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f9; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Modifikasi Table Layout Standar Excel */
         .excel-table { border-collapse: collapse; width: 100%; font-size: 10px; table-layout: fixed; }
         .excel-table th, .excel-table td { border: 1px solid #000; padding: 2px 3px; text-align: center; vertical-align: middle; word-wrap: break-word; overflow: hidden; }
         
-        /* Fix Sticky Header overlap */
         .excel-table th { background-color: #f3f4f6; position: sticky; top: 0; z-index: 10; font-weight: normal; line-height: 1.1; }
         .excel-table thead tr:first-child th { height: 24px; } 
         .excel-table thead tr:nth-child(2) th { top: 24px; background-color: #e0f2fe; } 
@@ -33,7 +31,6 @@
         
         .modal-overlay { background-color: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 9999; }
         
-        /* Login Styles */
         .login-bg { min-height: 100vh; background: linear-gradient(135deg, #3b5cb8 0%, #7c4fa0 40%, #c0392b 100%); position: relative; display: flex; align-items: center; justify-content: flex-end; }
         .login-card { position: relative; z-index: 10; background: rgba(255,255,255,0.12); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.25); width: 420px; min-height: 100vh; padding: 60px 48px; display: flex; flex-direction: column; justify-content: center; box-shadow: -12px 0 60px rgba(0,0,0,0.3); }
         .login-left { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 60px 80px; position: relative; z-index: 10; }
@@ -64,7 +61,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // PASTIKAN API_URL INI SESUAI DENGAN DEPLOYMENT BARU ANDA
         const API_URL = 'https://script.google.com/macros/s/AKfycbxtYvl-g9l0GhIIEYkKFGnI31MFExXj92YRayum1nePexSSeIbyOalk6a1Pcq8vdmx4/exec';
 
         const IconDashboard = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
@@ -76,9 +72,6 @@
         const IconChevronDown = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>;
         const IconChevronUp = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>;
 
-        // =====================================================================
-        // KOMPONEN: MODUL PRODUCTION REPORT 
-        // =====================================================================
         const ProductionReportModule = ({ user }) => {
             const [rows, setRows] = useState([]);
             const [loading, setLoading] = useState(false);
@@ -105,7 +98,6 @@
 
             useEffect(() => { loadData(); }, [formHeader.tanggal]);
 
-            // Scanner 1: HTML5 QR Scanner (Digunakan jika lewat Browser PC/Web biasa)
             useEffect(() => {
                 let html5QrcodeScanner;
                 if (showScanner && activeTab === 'INPUT DATA' && isProsesOpen) {
@@ -119,22 +111,20 @@
                 return () => { if(html5QrcodeScanner) html5QrcodeScanner.clear().catch(e => console.log(e)); };
             }, [showScanner, activeTab, isProsesOpen]);
 
-            // Scanner 2: Listener untuk MIT App Inventor Native Scanner (Solusi 2)
+            // ==============================================================================
+            // FUNGSI BARU (ANTI-ERROR): Menunggu suntikan data dari App Inventor
+            // ==============================================================================
             useEffect(() => {
-                const interval = setInterval(() => {
-                    if (window.AppInventor) {
-                        const qrResult = window.AppInventor.getWebViewString();
-                        if (qrResult && qrResult !== "") {
-                            // Masukkan data scan ke form jika ada isinya
-                            handleQrScan(qrResult);
-                            
-                            // Bersihkan string agar tidak diproses berulang-ulang
-                            window.AppInventor.setWebViewString(""); 
-                        }
+                // Membuat fungsi global yang bisa dipanggil dari luar (dari Android)
+                window.terimaDataScan = (hasilScanAndroid) => {
+                    if (hasilScanAndroid && hasilScanAndroid !== "") {
+                        handleQrScan(hasilScanAndroid);
                     }
-                }, 1000); // Mengecek WebViewString setiap 1 detik
-                return () => clearInterval(interval);
-            }, [masterSpecs]); // Dependensi masterSpecs agar nama spek bisa terbaca dari DB
+                };
+                return () => {
+                    delete window.terimaDataScan; // Bersihkan jika halaman ditutup
+                };
+            }, [masterSpecs]); // Butuh masterSpecs agar mapping spek tetap jalan
 
             const loadData = async () => {
                 setLoading(true);
@@ -188,7 +178,7 @@
                         const rawMatSize = parts[2] ? parts[2].trim() : '';
                         const weight = parts[5] ? parts[5].trim() : '';
                         setFormProses(prev => ({ ...prev, ccno: ccno, spec: specName, raw_mat_size: rawMatSize, weight_raw: weight }));
-                        alert("Data QR Material Berhasil Diekstrak!");
+                        alert("Data QR Berhasil Dimasukkan!");
                     } else { alert("Format QR tidak sesuai rule."); }
                 } catch(e) { alert("Error parsing QR: " + e.message); }
             };
@@ -280,7 +270,6 @@
             return (
                 <div className="bg-white rounded shadow-lg border border-gray-300 flex flex-col p-2 print-flatten">
                     
-                    {/* Header Controls (Navigasi Sejajar) - Disembunyikan saat print */}
                     <div className="bg-white p-2 border-b-2 border-gray-800 flex flex-wrap items-center justify-between no-print mb-2 gap-2">
                         <div className="flex items-center gap-4 flex-wrap">
                             <div className="flex items-center gap-2">
@@ -300,7 +289,6 @@
                         </div>
                     </div>
 
-                    {/* MODAL FORM INPUT */}
                     {isFormOpen && (
                         <div className="fixed inset-0 modal-overlay flex justify-center items-center p-4 no-print">
                             <div className="bg-white w-full max-w-5xl rounded-lg shadow-2xl flex flex-col max-h-[95vh]">
@@ -352,8 +340,8 @@
                                             {isProsesOpen && (
                                                 <div className="mb-6 px-2 animate-fade-in">
                                                     <div className="mb-4 bg-yellow-50 p-4 border border-yellow-200 rounded-lg flex justify-between items-center">
-                                                        <div className="text-sm font-bold text-yellow-800">Scan QR untuk Auto-Fill Material Data</div>
-                                                        <button type="button" onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner' : 'Buka Scanner'}</button>
+                                                        <div className="text-sm font-bold text-yellow-800">Gunakan Tombol Scan di Aplikasi (Bawah) untuk Input Material</div>
+                                                        <button type="button" onClick={() => setShowScanner(!showScanner)} className="bg-yellow-500 text-white px-4 py-2 rounded text-xs font-bold uppercase hover:bg-yellow-600 shadow-sm">{showScanner ? 'Tutup Scanner Web' : 'Buka Scanner Web'}</button>
                                                     </div>
                                                     {showScanner && <div id="qr-reader" className="w-full max-w-md mx-auto mb-6 border-2 border-dashed border-gray-300 p-2 rounded"></div>}
 
@@ -410,7 +398,6 @@
 
                                             <div className="relative my-6"><div className="absolute inset-0 flex items-center" aria-hidden="true"><div className="w-full border-t-2 border-dashed border-gray-300"></div></div></div>
 
-                                            {/* ACCORDION BAGIAN DOWNTIME */}
                                             <div className="flex justify-between items-center bg-red-50 border border-red-200 p-3 rounded-lg cursor-pointer hover:bg-red-100 transition shadow-sm mb-2" onClick={() => setIsDowntimeOpen(!isDowntimeOpen)}>
                                                 <h3 className="font-bold text-red-800 uppercase tracking-wide flex items-center gap-2"><span className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Data Downtime (Loss Time)</h3>
                                                 <span className="text-red-800">{isDowntimeOpen ? <IconChevronUp /> : <IconChevronDown />}</span>
@@ -442,7 +429,6 @@
                         </div>
                     )}
 
-                    {/* Print Header Tampil Eksklusif Saat di Print */}
                     <div className="hidden print:flex w-full justify-between items-end mb-4 border-b-2 border-black pb-2 px-2">
                         <div className="w-1/3 text-sm font-bold">Tanggal : <span className="border-b border-black min-w-[120px] inline-block ml-2">{new Date(formHeader.tanggal).toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'})}</span></div>
                         <div className="w-1/3 text-center"><h1 className="text-2xl font-black tracking-widest uppercase m-0 p-0 line-height-1">PRODUCTION REPORT</h1></div>
@@ -455,7 +441,6 @@
                         </div>
                     </div>
 
-                    {/* Main Excel Table */}
                     <div className="overflow-x-auto overflow-y-auto print-table-container hide-scrollbar" style={{ maxHeight: '72vh' }}>
                         <table className="excel-table w-full">
                             <thead>
@@ -541,7 +526,6 @@
                         </table>
                     </div>
 
-                    {/* Footer Area - LINE MEMBER */}
                     <div className="mt-2 border border-black text-[9px] flex flex-wrap page-break-inside-avoid">
                         <div className="w-1/4 border-r border-black p-1">
                             <div className="font-bold uppercase bg-gray-100 text-center border-b border-black">Line Member</div>
@@ -577,7 +561,7 @@
                         <div className="flex-1 p-1 flex flex-col">
                             <div className="border border-black flex-1 flex flex-col justify-between">
                                 <div className="text-center border-b border-black py-0.5 uppercase font-bold">Cek Leader</div>
-                                <div className="flex-1 min-h-[25px]"></div> {/* Space tanda tangan */}
+                                <div className="flex-1 min-h-[25px]"></div>
                                 <div className="text-center py-0.5 font-bold uppercase truncate px-1 border-t border-dashed border-gray-400 text-[10px]">
                                     {formHeader.leader}
                                 </div>
@@ -588,9 +572,6 @@
             );
         };
 
-        // =====================================================================
-        // KOMPONEN: LOGIN PAGE
-        // =====================================================================
         const LoginPage = ({ onLogin }) => {
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
@@ -642,7 +623,7 @@
                 <div className="login-bg">
                     <div className="login-left">
                         <div style={{ marginBottom: '40px' }}><div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', border: '2px solid rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div><span style={{ color: 'white', fontSize: '22px', fontWeight: '900', letterSpacing: '3px', textTransform: 'uppercase' }}>HSSI <span style={{ color: '#fbbf24' }}>System</span></span></div></div>
-                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br /><br /><br /></h2>
+                        <h2 style={{ padding: 0, fontSize: '2.8rem', fontWeight: '800', color: 'white', lineHeight: 1.2, textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>Prod Report<br />hanwa<br />resources in your<br />company to the<br />next level</h2>
                     </div>
                     <div className="login-card">
                         <div style={{ textAlign: 'center', marginBottom: '28px' }}><h1 style={{ color: 'white', fontSize: '18px', fontWeight: '900', letterSpacing: '1px', lineHeight: 1.3, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.3)' }}>PT HANWA STEEL SERVICE<br />INDONESIA</h1><div className="login-divider" style={{ margin: '14px auto' }}></div><p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', fontWeight: '500' }}>Sign in to your account</p></div>
@@ -657,9 +638,6 @@
             );
         };
 
-        // =====================================================================
-        // KOMPONEN: MAIN LAYOUT
-        // =====================================================================
         const App = () => {
             const [user, setUser] = useState(null);
             const [isSidebarOpen, setIsSidebarOpen] = useState(true);
